@@ -1,0 +1,37 @@
+[2026-01-02 20:12:34] Starting create.php
+[2026-01-02 20:12:34] Root dir: C:\xampp\htdocs\ability_app-master
+[2026-01-02 20:16:50] Starting create.php
+[2026-01-02 20:16:50] Root dir: C:\xampp\htdocs\ability_app-master
+[2026-01-02 21:16:50] bootstrap.php loaded
+[2026-01-02 21:16:50] db_connect.php loaded
+[2026-01-02 21:16:50] functions.php loaded
+[2026-01-02 21:16:50] Creating Database instance
+[2026-01-02 21:16:50] Database connected
+[2026-01-02 21:16:50] Serial number: PRO-81392916-914
+[2026-01-02 21:16:50] Data prepared
+[2026-01-02 21:16:50] Processing image upload
+[2026-01-02 21:16:50] Image uploaded: uploads/items/item_1767381410_30d8495d80149d3e.png
+[2026-01-02 21:16:50] Generate QR: yes
+[2026-01-02 21:16:50] QR path set to: uploads/qrcodes/qr_1767381410_d2b814ac.png
+[2026-01-02 21:16:50] Preparing SQL statement
+[2026-01-02 21:16:50] Binding parameters
+[2026-01-02 21:16:50] Item inserted with ID: 14
+[2026-01-02 21:16:50] Generating QR code
+[2026-01-02 20:20:11] Starting create.php
+[2026-01-02 20:20:11] Root dir: C:\xampp\htdocs\ability_app-master
+[2026-01-02 21:20:11] bootstrap.php loaded
+[2026-01-02 21:20:11] db_connect.php loaded
+[2026-01-02 21:20:11] functions.php loaded
+[2026-01-02 21:20:11] Creating Database instance
+[2026-01-02 21:20:11] Database connected
+[2026-01-02 21:20:11] Serial number: PRO-81392916-914
+[2026-01-02 21:20:11] Serial number modified to: PRO-81392916-914-1767381611
+[2026-01-02 21:20:11] Data prepared
+[2026-01-02 21:20:11] Processing image upload
+[2026-01-02 21:20:11] Image uploaded: uploads/items/item_1767381611_0d4fa1c4bee016cc.png
+[2026-01-02 21:20:11] Generate QR: yes
+[2026-01-02 21:20:11] QR path set to: uploads/qrcodes/qr_1767381611_e04f9c06.png
+[2026-01-02 21:20:11] Preparing SQL statement
+[2026-01-02 21:20:11] Binding parameters
+[2026-01-02 21:20:11] Item inserted with ID: 15
+[2026-01-02 21:20:11] Generating QR code

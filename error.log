@@ -1,0 +1,19 @@
+[07-Jan-2026 19:00:35 Africa/Kigali] Composer QR code generation error: code length overflow. (1924 > 864 bit)
+[07-Jan-2026 19:00:35 Africa/Kigali] GD library not available for QR code generation
+[07-Jan-2026 19:01:00 Africa/Kigali] Composer QR code generation error: code length overflow. (1940 > 864 bit)
+[07-Jan-2026 19:01:00 Africa/Kigali] GD library not available for QR code generation
+[07-Jan-2026 19:01:04 Africa/Kigali] Composer QR code generation error: code length overflow. (1940 > 864 bit)
+[07-Jan-2026 19:01:04 Africa/Kigali] GD library not available for QR code generation
+[07-Jan-2026 19:11:57 Africa/Kigali] Composer QR code generation error: code length overflow. (1940 > 864 bit)
+[07-Jan-2026 19:11:57 Africa/Kigali] GD library not available for QR code generation
+[07-Jan-2026 19:12:04 Africa/Kigali] Composer QR code generation error: code length overflow. (1940 > 864 bit)
+[07-Jan-2026 19:12:04 Africa/Kigali] GD library not available for QR code generation
+[07-Jan-2026 19:18:18 Africa/Kigali] Composer QR code generation error: code length overflow. (1940 > 864 bit)
+[07-Jan-2026 19:18:18 Africa/Kigali] GD library not available for QR code generation
+[07-Jan-2026 19:20:09 Africa/Kigali] Composer QR code generation error: code length overflow. (1980 > 864 bit)
+[07-Jan-2026 19:20:09 Africa/Kigali] GD library not available for QR code generation
+[07-Jan-2026 19:21:17 Africa/Kigali] Composer QR code generation error: code length overflow. (1852 > 864 bit)
+[07-Jan-2026 19:21:17 Africa/Kigali] GD library not available for QR code generation
+[07-Jan-2026 19:25:41 Africa/Kigali] Create Item Error: Database connection not available in C:\xampp\htdocs\ability_app-master\api\items\create.php:56
+[07-Jan-2026 19:27:30 Africa/Kigali] Create Item Error: Database connection not available in C:\xampp\htdocs\ability_app-master\api\items\create.php:56
+[07-Jan-2026 19:28:23 Africa/Kigali] Create Item Error: Database connection not available in C:\xampp\htdocs\ability_app-master\api\items\create.php:56

@@ -1,0 +1,12 @@
+ITEM INFORMATION:
+ID: 134
+Name: Mini Converter - Optical Fiber 12G
+Serial: MIN-85468457-486
+Category: Video
+Brand/Model: Blackmagic Design Optical Fiber 12G
+Status: available
+Condition: good
+QR Generated: 2026-01-16 18:45:01
+
+Full Data:
+{"id":134,"name":"Mini Converter - Optical Fiber 12G","serial":"MIN-85468457-486","category":"Video","added":"2026-01-16 18:45:01"}
