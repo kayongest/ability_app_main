@@ -2,7 +2,13 @@
 
 /**
  * Common functions for aBility Manager
+ * COMPLETE VERSION
  */
+
+// Define BASE_URL if not defined
+if (!defined('BASE_URL')) {
+    define('BASE_URL', '/');
+}
 
 // Check if user is logged in
 function isLoggedIn()
@@ -28,7 +34,7 @@ function sanitizeInput($data)
 }
 
 /**
- * Get condition badge HTML - UPDATED
+ * Get condition badge HTML
  */
 function getConditionBadge($condition)
 {
@@ -52,7 +58,7 @@ function getConditionBadge($condition)
 }
 
 /**
- * Get status badge HTML - UPDATED
+ * Get status badge HTML
  */
 function getStatusBadge($status)
 {
@@ -75,7 +81,7 @@ function getStatusBadge($status)
 }
 
 /**
- * Get category badge HTML - UPDATED to match your categories
+ * Get category badge HTML
  */
 function getCategoryBadge($category)
 {
@@ -96,7 +102,6 @@ function getCategoryBadge($category)
 }
 
 // Get item accessories
-// Look for this function and update it:
 function getItemAccessories($item_id, $conn)
 {
     $accessories = [];
@@ -458,95 +463,64 @@ function getDashboardStats($db)
     }
 }
 
-// Get recent items - PRODUCTION READY VERSION
-function getRecentItems($conn, $limit = 100)
+// Get recent items
+function getRecentItems($conn, $limit = 10)
 {
     $items = [];
 
-    if (!$conn) {
-        return $items;
-    }
+    // Try multiple query approaches
+    $queries = [
+        // Try with joins
+        "SELECT i.*, c.name as category, d.name as department 
+         FROM items i
+         LEFT JOIN categories c ON i.category_id = c.id
+         LEFT JOIN departments d ON i.department_id = d.id
+         WHERE i.is_active = 1 
+         ORDER BY i.created_at DESC 
+         LIMIT $limit",
 
-    try {
-        $sql = "SELECT 
-                    i.id, 
-                    i.item_name, 
-                    i.serial_number, 
-                    i.category, 
-                    i.brand, 
-                    i.model, 
-                    i.department, 
-                    i.description,
-                    i.condition,
-                    i.stock_location,
-                    i.quantity,
-                    i.status,
-                    i.qr_code,
-                    i.created_at,
-                    i.updated_at
-                FROM items i
-                ORDER BY i.created_at DESC 
-                LIMIT " . (int)$limit;
+        // Try without departments join
+        "SELECT i.*, c.name as category 
+         FROM items i
+         LEFT JOIN categories c ON i.category_id = c.id
+         WHERE i.is_active = 1 
+         ORDER BY i.created_at DESC 
+         LIMIT $limit",
 
-        $result = $conn->query($sql);
+        // Try simplest
+        "SELECT * FROM items 
+         WHERE is_active = 1 
+         ORDER BY created_at DESC 
+         LIMIT $limit",
 
-        if ($result && $result->num_rows > 0) {
-            while ($row = $result->fetch_assoc()) {
-                $items[] = $row;
+        // Try without created_at
+        "SELECT * FROM items 
+         WHERE is_active = 1 
+         ORDER BY id DESC 
+         LIMIT $limit",
+
+        // Last resort
+        "SELECT * FROM items LIMIT $limit"
+    ];
+
+    foreach ($queries as $sql) {
+        try {
+            $result = $conn->query($sql);
+            if ($result) {
+                $items = $result->fetch_all(MYSQLI_ASSOC);
+                $result->free();
+                if (!empty($items)) {
+                    error_log("Success with query: " . substr($sql, 0, 50) . "...");
+                    break;
+                }
             }
+        } catch (Exception $e) {
+            error_log("Query failed: " . $e->getMessage());
+            continue;
         }
-
-        return $items;
-    } catch (Exception $e) {
-        // Log error but don't break the page
-        error_log("Error in getRecentItems: " . $e->getMessage());
-        return $items;
-    }
-}
-
-
-/**
- * Generate QR code for an item
- */
-function generateQRCode($item_id, $item_name, $serial_number)
-{
-    // Check if QR code library is available
-    if (!class_exists('QRcode')) {
-        // You may need to install a QR code library
-        // Example: using PHP QR Code library
-        // require_once 'phpqrcode/qrlib.php';
-
-        // For now, return null
-        return null;
     }
 
-    try {
-        // Create data for QR code
-        $data = json_encode([
-            'id' => $item_id,
-            'name' => $item_name,
-            'serial' => $serial_number,
-            'system' => 'aBility Inventory'
-        ]);
-
-        // Generate QR code
-        $qr_dir = '../uploads/qr_codes/';
-        if (!file_exists($qr_dir)) {
-            mkdir($qr_dir, 0777, true);
-        }
-
-        $filename = 'qr_' . $item_id . '_' . time() . '.png';
-        $filepath = $qr_dir . $filename;
-
-        // Generate QR code using library
-        // QRcode::png($data, $filepath, QR_ECLEVEL_L, 10);
-
-        // For now, return a placeholder
-        return 'uploads/qr_codes/' . $filename;
-    } catch (Exception $e) {
-        error_log("QR Code generation error: " . $e->getMessage());
-        return null;
-    }
+    return $items;
 }
 
 /**
@@ -567,7 +541,6 @@ function serialExists($serial_number, $conn)
         return false;
     }
 }
-
 
 // Function to get total quantity per item name (aggregating all serial numbers)
 function getTotalQuantityPerItem($conn, $item_name = null)
@@ -944,338 +917,439 @@ function generateUniqueSerial($db, $prefix = 'EQ')
     return $prefix . '-' . date('YmdHis') . '-' . rand(1000, 9999);
 }
 
-
 /**
- * Map Excel columns to database fields with validation
+ * Generate single QR code
  */
-function mapExcelColumns($headers, $field_mapping)
+function generateSingleQRCode($item_id, $item_name, $serial_number, $conn = null)
 {
-    $mappedData = [];
-    $requiredFields = ['item_name', 'serial_number', 'category'];
-    $missingRequired = [];
-
-    // Check required fields
-    foreach ($requiredFields as $field) {
-        if (empty($field_mapping[$field]) || $field_mapping[$field] === 'none') {
-            $missingRequired[] = $field;
-        }
-    }
-
-    if (!empty($missingRequired)) {
-        throw new Exception('Missing required field mapping: ' . implode(', ', $missingRequired));
-    }
-
-    return $field_mapping;
-}
-
-/**
- * Process imported row data with validation
- */
-function processImportedRow($rowData, $fieldMapping, $headers, $rowNumber)
-{
-    $processed = [];
-
-    // Map Excel data based on field mapping
-    foreach ($fieldMapping as $dbField => $excelCol) {
-        if ($excelCol && $excelCol !== 'none') {
-            $colIndex = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($excelCol) - 1;
-            $processed[$dbField] = isset($rowData[$colIndex]) ? trim($rowData[$colIndex]) : '';
-        }
-    }
-
-    // Validate required fields
-    $required = ['item_name', 'serial_number', 'category'];
-    foreach ($required as $field) {
-        if (empty($processed[$field])) {
-            throw new Exception("Row $rowNumber: Missing required field '$field'");
-        }
-    }
-
-    // Set defaults
-    $defaults = [
-        'quantity' => 1,
-        'condition' => 'good',
-        'status' => 'available',
-        'brand_model' => ''
-    ];
-
-    foreach ($defaults as $field => $defaultValue) {
-        if (empty($processed[$field])) {
-            $processed[$field] = $defaultValue;
-        }
-    }
-
-    // Create brand_model from brand and model
-    if (!empty($processed['brand']) && !empty($processed['model'])) {
-        $processed['brand_model'] = $processed['brand'] . ' ' . $processed['model'];
-    } elseif (!empty($processed['brand'])) {
-        $processed['brand_model'] = $processed['brand'];
-    } elseif (!empty($processed['model'])) {
-        $processed['brand_model'] = $processed['model'];
-    }
-
-    // Clean up empty values
-    foreach ($processed as $key => $value) {
-        if ($value === '') {
-            unset($processed[$key]);
-        }
-    }
-
-    return $processed;
-}
-
-/**
- * Import items from Excel/CSV file
- */
-function importItemsFromFile($filePath, $fieldMapping, $testMode = false)
-{
-    require_once 'vendor/autoload.php';
-
-    $results = [
-        'success' => 0,
-        'updated' => 0,
-        'errors' => [],
-        'skipped' => 0,
-        'total_rows' => 0
-    ];
-
     try {
-        // Load spreadsheet
-        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($filePath);
-        $worksheet = $spreadsheet->getActiveSheet();
+        // Use the same logic as generate_all_qr_codes.php
+        $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http");
+        $host = $_SERVER['HTTP_HOST'];
 
-        // Get data
-        $highestRow = $worksheet->getHighestRow();
-        $highestColumn = $worksheet->getHighestColumn();
-        $highestColumnIndex = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($highestColumn);
+        $data = json_encode([
+            'id' => $item_id,
+            'name' => $item_name,
+            'serial' => $serial_number,
+            'system' => 'aBility Inventory',
+            'url' => $protocol . "://" . $host . '/items/view.php?id=' . $item_id,
+            'timestamp' => date('Y-m-d H:i:s')
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
-        // Database connection
-        $db = new Database();
-        $conn = $db->getConnection();
-
-        $results['total_rows'] = $highestRow - 1; // Exclude header
-
-        // Process rows starting from row 2 (skip header)
-        for ($row = 2; $row <= $highestRow; $row++) {
-            $rowData = [];
-
-            // Get cell values for this row
-            for ($col = 1; $col <= $highestColumnIndex; $col++) {
-                $cellValue = $worksheet->getCellByColumnAndRow($col, $row)->getValue();
-                $rowData[] = $cellValue ? trim($cellValue) : '';
-            }
-
-            try {
-                // Process row
-                $itemData = processImportedRow($rowData, $fieldMapping, [], $row);
-
-                // Check if serial number exists
-                $checkSql = "SELECT id, item_name FROM items WHERE serial_number = ?";
-                $checkStmt = $conn->prepare($checkSql);
-                $checkStmt->bind_param('s', $itemData['serial_number']);
-                $checkStmt->execute();
-                $checkResult = $checkStmt->get_result();
-
-                if ($checkResult->num_rows > 0) {
-                    // Update existing item
-                    if (!$testMode) {
-                        $existing = $checkResult->fetch_assoc();
-
-                        // Build update query
-                        $updateFields = [];
-                        $updateValues = [];
-                        $types = '';
-
-                        foreach ($itemData as $field => $value) {
-                            if ($field !== 'serial_number') { // Don't update serial number
-                                $updateFields[] = "`$field` = ?";
-                                $updateValues[] = $value;
-
-                                // Determine type
-                                if ($field === 'quantity') {
-                                    $types .= 'i';
-                                } else {
-                                    $types .= 's';
-                                }
-                            }
-                        }
-
-                        // Add serial number for WHERE clause
-                        $updateValues[] = $itemData['serial_number'];
-                        $types .= 's';
-
-                        $updateSql = "UPDATE items SET " . implode(', ', $updateFields) .
-                            ", updated_at = NOW() WHERE serial_number = ?";
-                        $updateStmt = $conn->prepare($updateSql);
-                        $updateStmt->bind_param($types, ...$updateValues);
-
-                        if ($updateStmt->execute()) {
-                            $results['updated']++;
-                        } else {
-                            throw new Exception("Update failed: " . $updateStmt->error);
-                        }
-
-                        $updateStmt->close();
-                    } else {
-                        $results['updated']++; // Count in test mode
-                    }
-                } else {
-                    // Insert new item
-                    if (!$testMode) {
-                        $fields = array_keys($itemData);
-                        $placeholders = str_repeat('?,', count($fields) - 1) . '?';
-                        $values = array_values($itemData);
-
-                        // Determine types
-                        $types = '';
-                        foreach ($itemData as $value) {
-                            if (is_int($value)) {
-                                $types .= 'i';
-                            } else {
-                                $types .= 's';
-                            }
-                        }
-
-                        $insertSql = "INSERT INTO items (`" . implode('`,`', $fields) .
-                            "`, created_at) VALUES ($placeholders, NOW())";
-                        $insertStmt = $conn->prepare($insertSql);
-                        $insertStmt->bind_param($types, ...$values);
-
-                        if ($insertStmt->execute()) {
-                            $results['success']++;
-
-                            // Generate QR code in background
-                            $item_id = $conn->insert_id;
-                            // generateQRCode($item_id, $conn); // Uncomment if you want QR generation
-
-                        } else {
-                            throw new Exception("Insert failed: " . $insertStmt->error);
-                        }
-
-                        $insertStmt->close();
-                    } else {
-                        $results['success']++; // Count in test mode
-                    }
-                }
-
-                $checkStmt->close();
-            } catch (Exception $e) {
-                $results['errors'][] = "Row $row: " . $e->getMessage();
-                $results['skipped']++;
+        // Create QR directory if it doesn't exist
+        $qrDir = '../uploads/qr_codes/';
+        if (!file_exists($qrDir)) {
+            if (!mkdir($qrDir, 0777, true)) {
+                throw new Exception("Failed to create QR directory");
             }
         }
 
-        $conn->close();
+        // Generate filename
+        $cleanName = preg_replace('/[^a-z0-9]/i', '_', $item_name);
+        $cleanSerial = preg_replace('/[^a-z0-9]/i', '_', $serial_number);
+        $filename = 'qr_' . $item_id . '_' . $cleanName . '_' . $cleanSerial . '.png';
+        $filepath = $qrDir . $filename;
+        $qrDbPath = 'uploads/qr_codes/' . $filename;
+
+        // Try to generate QR using external API
+        $context = stream_context_create([
+            'http' => [
+                'timeout' => 10,
+                'header' => "User-Agent: aBility-Inventory/1.0\r\n",
+                'ignore_errors' => true
+            ]
+        ]);
+
+        // Try QRServer API first
+        $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' . urlencode($data);
+        $qrImage = @file_get_contents($qrUrl, false, $context);
+
+        if ($qrImage === false) {
+            // Fallback to Google Charts
+            $qrUrl = 'https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=' . urlencode($data);
+            $qrImage = @file_get_contents($qrUrl, false, $context);
+        }
+
+        if ($qrImage !== false && file_put_contents($filepath, $qrImage) !== false) {
+            return $qrDbPath;
+        }
+
+        throw new Exception("Failed to generate QR code image");
     } catch (Exception $e) {
-        $results['errors'][] = "File processing error: " . $e->getMessage();
+        error_log("Single QR generation error: " . $e->getMessage());
+        return null;
+    }
+}
+
+/**
+ * Check if QR code generation is working
+ */
+function checkQRCodeAPIs()
+{
+    $testData = 'Test QR Code - aBility Inventory';
+    $context = stream_context_create([
+        'http' => [
+            'timeout' => 5,
+            'ignore_errors' => true
+        ]
+    ]);
+
+    $apis = [
+        'QRServer' => 'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=' . urlencode($testData),
+        'GoogleCharts' => 'https://chart.googleapis.com/chart?chs=100x100&cht=qr&chl=' . urlencode($testData)
+    ];
+
+    $results = [];
+    foreach ($apis as $name => $url) {
+        try {
+            $response = @file_get_contents($url, false, $context);
+            $results[$name] = ($response !== false && strlen($response) > 100);
+        } catch (Exception $e) {
+            $results[$name] = false;
+        }
     }
 
     return $results;
 }
 
 /**
- * Download Excel template
+ * Get QR code statistics
  */
-function downloadExcelTemplate()
+function getQRCodeStats($conn)
 {
-    require_once 'vendor/autoload.php';
-
-    $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
-    $sheet = $spreadsheet->getActiveSheet();
-
-    // Set headers
-    $headers = [
-        'item_name',
-        'serial_number',
-        'category',
-        'brand',
-        'model',
-        'department',
-        'description',
-        'specifications',
-        'condition',
-        'stock_location',
-        'storage_location',
-        'notes',
-        'quantity',
-        'status',
-        'tags'
+    $stats = [
+        'total_items' => 0,
+        'with_qr' => 0,
+        'without_qr' => 0,
+        'pending' => 0,
+        'invalid' => 0
     ];
 
-    // Write headers
-    foreach ($headers as $index => $header) {
-        $sheet->setCellValueByColumnAndRow($index + 1, 1, $header);
+    try {
+        // Total items
+        $result = $conn->query("SELECT COUNT(*) as count FROM items WHERE status NOT IN ('disposed', 'lost')");
+        if ($result && $row = $result->fetch_assoc()) {
+            $stats['total_items'] = $row['count'];
+        }
+
+        // Items with valid QR codes
+        $result = $conn->query("SELECT COUNT(*) as count FROM items 
+                               WHERE qr_code IS NOT NULL 
+                               AND qr_code != '' 
+                               AND qr_code != 'pending'
+                               AND status NOT IN ('disposed', 'lost')");
+        if ($result && $row = $result->fetch_assoc()) {
+            $stats['with_qr'] = $row['count'];
+        }
+
+        // Items without QR codes
+        $result = $conn->query("SELECT COUNT(*) as count FROM items 
+                               WHERE (qr_code IS NULL OR qr_code = '')
+                               AND status NOT IN ('disposed', 'lost')");
+        if ($result && $row = $result->fetch_assoc()) {
+            $stats['without_qr'] = $row['count'];
+        }
+
+        // Items with pending QR codes
+        $result = $conn->query("SELECT COUNT(*) as count FROM items 
+                               WHERE qr_code = 'pending'
+                               AND status NOT IN ('disposed', 'lost')");
+        if ($result && $row = $result->fetch_assoc()) {
+            $stats['pending'] = $row['count'];
+        }
+
+        // Check for invalid QR codes (files that don't exist)
+        $result = $conn->query("SELECT id, qr_code FROM items 
+                               WHERE qr_code IS NOT NULL 
+                               AND qr_code != ''
+                               AND qr_code != 'pending'
+                               AND status NOT IN ('disposed', 'lost')");
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $filePath = '../' . $row['qr_code'];
+                if (!file_exists($filePath)) {
+                    $stats['invalid']++;
+                }
+            }
+        }
+    } catch (Exception $e) {
+        error_log("QR stats error: " . $e->getMessage());
     }
 
-    // Add example data
-    $examples = [
-        [
-            'MacBook Pro 16"',
-            'MBP-2023-001',
-            'IT',
-            'Apple',
-            'MacBook Pro 16-inch M2',
-            'IT Department',
-            'Company laptop for developers',
-            'M2 Pro, 32GB RAM, 1TB SSD',
-            'excellent',
-            'Warehouse A',
-            'Shelf B3',
-            'For development team',
-            1,
-            'available',
-            'laptop,apple,development'
-        ],
-        [
-            'Projector Epson',
-            'PROJ-EP-045',
-            'Video',
-            'Epson',
-            'EH-TW7000',
-            'VID',
-            '4K Projector for events',
-            '4K, 3000 lumens, HDR',
-            'good',
-            'BK Arena',
-            'Storage Room 2',
-            'Needs calibration',
-            2,
-            'available',
-            'projector,4k,event'
-        ]
+    return $stats;
+}
+
+/**
+ * Validate all QR codes in database
+ */
+function validateQRCodes($conn)
+{
+    $results = [
+        'valid' => 0,
+        'invalid' => 0,
+        'missing_files' => []
     ];
 
-    foreach ($examples as $rowIndex => $exampleRow) {
-        foreach ($exampleRow as $colIndex => $value) {
-            $sheet->setCellValueByColumnAndRow($colIndex + 1, $rowIndex + 2, $value);
+    try {
+        $query = "SELECT id, item_name, qr_code FROM items 
+                  WHERE qr_code IS NOT NULL 
+                  AND qr_code != '' 
+                  AND qr_code != 'pending'";
+
+        $result = $conn->query($query);
+
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $filePath = '../' . $row['qr_code'];
+
+                if (file_exists($filePath)) {
+                    // Check if it's a valid image
+                    $imageInfo = @getimagesize($filePath);
+                    if ($imageInfo !== false && $imageInfo[0] > 0) {
+                        $results['valid']++;
+                    } else {
+                        $results['invalid']++;
+                        $results['missing_files'][] = [
+                            'id' => $row['id'],
+                            'name' => $row['item_name'],
+                            'reason' => 'Invalid image file'
+                        ];
+                    }
+                } else {
+                    $results['invalid']++;
+                    $results['missing_files'][] = [
+                        'id' => $row['id'],
+                        'name' => $row['item_name'],
+                        'reason' => 'File not found'
+                    ];
+                }
+            }
+        }
+    } catch (Exception $e) {
+        error_log("QR validation error: " . $e->getMessage());
+    }
+
+    return $results;
+}
+
+/**
+ * Repair missing QR codes
+ */
+function repairQRCodes($conn, $limit = 50)
+{
+    $results = [
+        'repaired' => 0,
+        'failed' => 0,
+        'errors' => []
+    ];
+
+    try {
+        // Find items with missing QR files
+        $query = "SELECT i.id, i.item_name, i.serial_number, i.qr_code 
+                  FROM items i 
+                  WHERE i.qr_code IS NOT NULL 
+                  AND i.qr_code != '' 
+                  AND i.qr_code != 'pending'
+                  AND i.status NOT IN ('disposed', 'lost')
+                  LIMIT ?";
+
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("i", $limit);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        while ($row = $result->fetch_assoc()) {
+            $filePath = '../' . $row['qr_code'];
+
+            if (!file_exists($filePath)) {
+                // Try to regenerate QR code
+                $newQrPath = generateSingleQRCode($row['id'], $row['item_name'], $row['serial_number'], $conn);
+
+                if ($newQrPath) {
+                    // Update database
+                    $updateStmt = $conn->prepare("UPDATE items SET qr_code = ? WHERE id = ?");
+                    $updateStmt->bind_param("si", $newQrPath, $row['id']);
+
+                    if ($updateStmt->execute()) {
+                        $results['repaired']++;
+                    } else {
+                        $results['failed']++;
+                        $results['errors'][] = "Failed to update database for item ID: " . $row['id'];
+                    }
+
+                    $updateStmt->close();
+                } else {
+                    $results['failed']++;
+                    $results['errors'][] = "Failed to generate QR for item: " . $row['item_name'];
+                }
+            }
+        }
+
+        $stmt->close();
+    } catch (Exception $e) {
+        error_log("QR repair error: " . $e->getMessage());
+        $results['errors'][] = $e->getMessage();
+    }
+
+    return $results;
+}
+
+/**
+ * Download QR code for single item
+ */
+function downloadQRCode($item_id, $conn)
+{
+    try {
+        $query = "SELECT item_name, serial_number, qr_code FROM items WHERE id = ?";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("i", $item_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($row = $result->fetch_assoc()) {
+            if (!empty($row['qr_code']) && $row['qr_code'] != 'pending') {
+                $filePath = '../' . $row['qr_code'];
+
+                if (file_exists($filePath)) {
+                    // Set headers for download
+                    header('Content-Type: image/png');
+                    header('Content-Disposition: attachment; filename="QR_' .
+                        preg_replace('/[^a-z0-9]/i', '_', $row['item_name']) . '_' .
+                        preg_replace('/[^a-z0-9]/i', '_', $row['serial_number']) . '.png"');
+                    header('Content-Length: ' . filesize($filePath));
+
+                    readfile($filePath);
+                    exit;
+                } else {
+                    throw new Exception("QR code file not found");
+                }
+            } else {
+                throw new Exception("No QR code available for this item");
+            }
+        } else {
+            throw new Exception("Item not found");
+        }
+    } catch (Exception $e) {
+        error_log("Download QR error: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Get batch QR code generation progress
+ */
+function getBatchQRProgress($batchId)
+{
+    $progressFile = '../uploads/temp/qr_progress_' . $batchId . '.json';
+
+    if (file_exists($progressFile)) {
+        $progressData = json_decode(file_get_contents($progressFile), true);
+
+        if (isset($progressData['completed'])) {
+            unlink($progressFile); // Clean up when done
+        }
+
+        return $progressData;
+    }
+
+    return [
+        'status' => 'not_found',
+        'message' => 'Progress data not found'
+    ];
+}
+
+/**
+ * Clean up old QR files
+ */
+function cleanupOldQRFiles($days = 30)
+{
+    $qrDir = '../uploads/qr_codes/';
+    $tempDir = '../uploads/temp_qr_zip/';
+
+    $deleted = 0;
+    $errors = [];
+
+    // Clean QR directory
+    if (file_exists($qrDir)) {
+        $files = glob($qrDir . '*.png');
+        $cutoffTime = time() - ($days * 24 * 60 * 60);
+
+        foreach ($files as $file) {
+            if (filemtime($file) < $cutoffTime) {
+                if (unlink($file)) {
+                    $deleted++;
+                } else {
+                    $errors[] = "Failed to delete: " . basename($file);
+                }
+            }
         }
     }
 
-    // Style the header row
-    $headerStyle = [
-        'font' => ['bold' => true],
-        'fill' => [
-            'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-            'startColor' => ['argb' => 'FFE0E0E0']
-        ]
-    ];
+    // Clean temp ZIP directory
+    if (file_exists($tempDir)) {
+        $dirs = glob($tempDir . '*', GLOB_ONLYDIR);
 
-    $sheet->getStyle('A1:O1')->applyFromArray($headerStyle);
+        foreach ($dirs as $dir) {
+            if (is_dir($dir)) {
+                // Delete files in directory
+                $tempFiles = glob($dir . '/*');
+                foreach ($tempFiles as $tempFile) {
+                    if (is_file($tempFile)) {
+                        unlink($tempFile);
+                    }
+                }
 
-    // Auto-size columns
-    foreach (range('A', 'O') as $column) {
-        $sheet->getColumnDimension($column)->setAutoSize(true);
+                // Delete directory
+                if (rmdir($dir)) {
+                    $deleted++;
+                } else {
+                    $errors[] = "Failed to delete temp directory: " . basename($dir);
+                }
+            }
+        }
+
+        // Clean old ZIP files
+        $zipFiles = glob($tempDir . '*.zip');
+        foreach ($zipFiles as $zipFile) {
+            if (filemtime($zipFile) < time() - (24 * 60 * 60)) { // 1 day
+                if (unlink($zipFile)) {
+                    $deleted++;
+                } else {
+                    $errors[] = "Failed to delete ZIP: " . basename($zipFile);
+                }
+            }
+        }
     }
 
-    // Create writer and output
-    $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+    return [
+        'deleted' => $deleted,
+        'errors' => $errors
+    ];
+}
 
-    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    header('Content-Disposition: attachment;filename="item_import_template.xlsx"');
-    header('Cache-Control: max-age=0');
+/**
+ * Test QR code generation (for debugging)
+ */
+function testQRGeneration()
+{
+    $results = [
+        'api_test' => checkQRCodeAPIs(),
+        'directory_permissions' => [
+            'uploads' => is_writable('../uploads'),
+            'qr_codes' => is_writable('../uploads/qr_codes/'),
+            'temp_qr_zip' => is_writable('../uploads/temp_qr_zip/')
+        ],
+        'php_extensions' => [
+            'gd' => extension_loaded('gd'),
+            'zip' => class_exists('ZipArchive'),
+            'curl' => function_exists('curl_init'),
+            'json' => function_exists('json_encode')
+        ],
+        'memory_limit' => ini_get('memory_limit'),
+        'max_execution_time' => ini_get('max_execution_time')
+    ];
 
-    $writer->save('php://output');
-    exit;
+    return $results;
 }
 
 /**

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logout-btn {
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .welcome-card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .user-details {
+            margin-top: 20px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+        }
+
+        .user-details p {
+            margin: 10px 0;
+            color: #555;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="logo">COMPANY LOGO</div>
+        <div class="user-info">
+            <span id="userName"></span>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="welcome-card">
+            <h1>Welcome to Admin Dashboard</h1>
+            <div class="user-details" id="userDetails">
+                <!-- User details will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check if user is logged in
+        window.addEventListener('DOMContentLoaded', function () {
+            const technician = JSON.parse(localStorage.getItem('technician'));
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+
+            if (!isLoggedIn || !technician) {
+                window.location.href = 'admin_login.html';
+                return;
+            }
+
+            // Display user information
+            document.getElementById('userName').textContent = technician.name;
+            document.getElementById('userDetails').innerHTML = `
+                <p><strong>Name:</strong> ${technician.name}</p>
+                <p><strong>Username:</strong> ${technician.username}</p>
+                <p><strong>Department:</strong> ${technician.department || 'Not specified'}</p>
+                <p><strong>ID:</strong> ${technician.id}</p>
+            `;
+        });
+
+        function logout() {
+            localStorage.removeItem('technician');
+            localStorage.removeItem('isLoggedIn');
+            window.location.href = 'admin_login.html';
+        }
+    </script>
+</body>
+
+</html>

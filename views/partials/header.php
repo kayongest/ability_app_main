@@ -34,8 +34,6 @@ if (!defined('BASE_URL')) {
     <link rel="icon" type="image/x-icon" href="<?php echo BASE_URL; ?>assets/images/warehouse_.png">
 
     <!-- ========== CSS FILES (LOAD FIRST) ========== -->
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -43,6 +41,9 @@ if (!defined('BASE_URL')) {
     <!-- DataTables CSS (Must be before jQuery) -->
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Toastr CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
@@ -54,17 +55,18 @@ if (!defined('BASE_URL')) {
     <!-- ========== JAVASCRIPT FILES (LOAD AFTER CSS) ========== -->
     <!-- jQuery MUST BE FIRST -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    
+
+
     <!-- Bootstrap JS Bundle (includes Popper) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     <!-- DataTables JS (AFTER jQuery) -->
     <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
-    
+
     <!-- Toastr JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-    
+
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 
@@ -79,21 +81,19 @@ if (!defined('BASE_URL')) {
 </head>
 
 <body>
-    <!-- Navigation remains the same as before -->
-    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: rgb(27 50 84); color: white;">
-        <div class="container-fluid">
+    <!-- Simplified Version without Dropdowns -->
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm sticky-top" style="background-color: rgb(27 50 84); color: white;">
+        <div class="container-fluid px-3">
             <a class="navbar-brand d-flex align-items-center" href="<?php echo BASE_URL; ?>">
                 <i class="fas fa-sync me-2"></i>
                 <span class="fw-bold">aBility</span>
             </a>
 
-            <!-- Mobile Toggle Button -->
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
                 aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
-            <!-- Main Navigation -->
             <div class="collapse navbar-collapse" id="mainNavbar">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
@@ -109,42 +109,33 @@ if (!defined('BASE_URL')) {
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?php echo ($current_page == 'scan_logs.php') ? 'active' : ''; ?>"
-                            href="<?php echo BASE_URL; ?>scan_logs.php">
-                            <i class="fas fa-history me-1"></i> Scan Logs
+                        <a class="nav-link <?php echo ($current_page == 'accessories.php') ? 'active' : ''; ?>"
+                            href="<?php echo BASE_URL; ?>accessories.php">
+                            <i class="fas fa-plug me-1"></i> Accessories
                         </a>
                     </li>
-                    
                     <li class="nav-item">
-                        <a class="nav-link <?php echo ($current_page == 'scan_logs.php') ? 'active' : ''; ?>"
+                        <a class="nav-link <?php echo ($current_page == 'import_items.php') ? 'active' : ''; ?>"
                             href="<?php echo BASE_URL; ?>import_items.php">
-                            <i class="fas fa-arrow-up me-1"></i> Import Items
+                            <i class="fas fa-upload me-1"></i> Import
                         </a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle <?php echo (in_array($current_page, ['categories.php', 'departments.php', 'locations.php'])) ? 'active' : ''; ?>"
-                            href="#" id="settingsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-cog me-1"></i> Settings
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="settingsDropdown">
-                            <li><a class="dropdown-item <?php echo ($current_page == 'categories.php') ? 'active' : ''; ?>"
-                                    href="<?php echo BASE_URL; ?>categories.php">
-                                    <i class="fas fa-list me-2"></i> Categories
-                                </a></li>
-                            <li><a class="dropdown-item <?php echo ($current_page == 'departments.php') ? 'active' : ''; ?>"
-                                    href="<?php echo BASE_URL; ?>departments.php">
-                                    <i class="fas fa-building me-2"></i> Departments
-                                </a></li>
-                            <li><a class="dropdown-item <?php echo ($current_page == 'locations.php') ? 'active' : ''; ?>"
-                                    href="<?php echo BASE_URL; ?>locations.php">
-                                    <i class="fas fa-map-marker-alt me-2"></i> Locations
-                                </a></li>
-                        </ul>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link <?php echo ($current_page == 'scan.php') ? 'active' : ''; ?>"
                             href="<?php echo BASE_URL; ?>scan.php">
-                            <i class="fas fa-qrcode me-1"></i> QR Scanner
+                            <i class="fas fa-expand me-1"></i> Single
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo ($current_page == 'scan_2.php') ? 'active' : ''; ?>"
+                            href="<?php echo BASE_URL; ?>scan_2.php">
+                            <i class="fas fa-qrcode me-1"></i> Bulk
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo ($current_page == 'scan_logs.php') ? 'active' : ''; ?>"
+                            href="<?php echo BASE_URL; ?>scan_logs.php">
+                            <i class="fas fa-history me-1"></i> History
                         </a>
                     </li>
                     <li class="nav-item">
@@ -153,16 +144,34 @@ if (!defined('BASE_URL')) {
                             <i class="fas fa-chart-bar me-1"></i> Reports
                         </a>
                     </li>
+                    <!-- Keep settings dropdown as it has multiple items -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle <?php echo (in_array($current_page, ['categories.php', 'departments.php', 'locations.php'])) ? 'active' : ''; ?>"
+                            href="#" id="settingsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-cog me-1"></i> Settings
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="settingsDropdown">
+                            <li><a class="dropdown-item" href="<?php echo BASE_URL; ?>categories.php">
+                                    <i class="fas fa-list me-2"></i> Categories
+                                </a></li>
+                            <li><a class="dropdown-item" href="<?php echo BASE_URL; ?>departments.php">
+                                    <i class="fas fa-building me-2"></i> Departments
+                                </a></li>
+                            <li><a class="dropdown-item" href="<?php echo BASE_URL; ?>locations.php">
+                                    <i class="fas fa-map-marker-alt me-2"></i> Locations
+                                </a></li>
+                        </ul>
+                    </li>
                 </ul>
 
-                <!-- User Menu -->
+                <!-- User menu stays the same -->
                 <ul class="navbar-nav ms-auto">
                     <?php if (isset($_SESSION['user_id'])): ?>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
                                 role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-user-circle me-1"></i>
-                                <span class="me-2"><?php echo htmlspecialchars($_SESSION['username'] ?? 'User'); ?></span>
+                                <span class="d-none d-md-inline me-2"><?php echo htmlspecialchars($_SESSION['username'] ?? 'User'); ?></span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                                 <li><a class="dropdown-item" href="<?php echo BASE_URL; ?>profile.php">

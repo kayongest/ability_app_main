@@ -253,7 +253,7 @@ if ($tableExists) {
             </div>
 
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-left-warning shadow h-100 py-2 text-white" style="background-color: #ffc107;">
+                <div class="card border-left-warning shadow h-100 py-2 text-white" style="background-color: #FE7F2D;">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
@@ -271,7 +271,7 @@ if ($tableExists) {
             </div>
 
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-left-danger shadow h-100 py-2 text-white" style="background-color: #dc3545;">
+                <div class="card border-left-danger shadow h-100 py-2 text-white" style="background-color: #9E2A3A;">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
@@ -383,15 +383,19 @@ if ($tableExists) {
                                     <td class="text-center">
                                         <?php
                                         $available = $acc['available_quantity'] ?? 0;
-                                        $min_stock = $acc['minimum_stock'] ?? 5; // Default to 5 if not set
+                                        $total = $acc['total_quantity'] ?? 0;
+                                        $min_stock = $acc['minimum_stock'] ?? 5;
+                                        $assigned_count = $acc['assigned_count'] ?? 0;
 
-                                        if ($available == 0) {
-                                            echo '<span class="badge bg-danger">' . $available . '</span>';
-                                        } elseif ($available <= $min_stock) {
-                                            echo '<span class="badge bg-warning">' . $available . '</span>';
-                                        } else {
-                                            echo '<span class="badge bg-success">' . $available . '</span>';
-                                        }
+                                        // Show calculation: Available = Total - Assigned
+                                        echo '<span class="badge ' .
+                                            ($available == 0 ? 'bg-danger' : ($available <= $min_stock ? 'bg-warning' : 'bg-success')) .
+                                            '">' . $available . '</span>';
+
+                                        // Show the calculation on hover or as a tooltip
+                                        echo '<br><small class="text-muted">' .
+                                            'Total: ' . $total . ' - Assigned: ' . $assigned_count .
+                                            '</small>';
                                         ?>
                                     </td>
                                     <td class="text-center"><?php echo $acc['minimum_stock'] ?? 5; ?></td>
@@ -434,6 +438,7 @@ if ($tableExists) {
                                                 data-total="<?php echo $acc['total_quantity'] ?? 0; ?>"
                                                 data-available="<?php echo $acc['available_quantity'] ?? 0; ?>"
                                                 data-minimum="<?php echo $acc['minimum_stock'] ?? 5; ?>"
+                                                data-assigned="<?php echo $acc['assigned_count'] ?? 0; ?>"
                                                 title="Edit">
                                                 <i class="fas fa-edit"></i>
                                             </button>
@@ -866,6 +871,71 @@ require_once 'views/partials/footer.php';
                     }
                 });
             });
+
+            // Add accessory form validation
+            $('#total_quantity, #available_quantity').on('change', function() {
+                const total = parseInt($('#total_quantity').val()) || 0;
+                const available = parseInt($('#available_quantity').val()) || 0;
+
+                if (available > total) {
+                    $('#available_quantity').val(total);
+                    toastr.warning('Available quantity cannot exceed total quantity');
+                }
+
+                if (available < 0) {
+                    $('#available_quantity').val(0);
+                    toastr.warning('Available quantity cannot be negative');
+                }
+            });
+
+            // Edit accessory form validation
+            $('#edit_total_quantity, #edit_available_quantity').on('change', function() {
+                const total = parseInt($('#edit_total_quantity').val()) || 0;
+                const available = parseInt($('#edit_available_quantity').val()) || 0;
+
+                if (available > total) {
+                    $('#edit_available_quantity').val(total);
+                    toastr.warning('Available quantity cannot exceed total quantity');
+                }
+
+                if (available < 0) {
+                    $('#edit_available_quantity').val(0);
+                    toastr.warning('Available quantity cannot be negative');
+                }
+            });
+
+            // When editing, show assigned count
+            $('.edit-accessory-btn').click(function() {
+                const id = $(this).data('id');
+                const name = $(this).data('name');
+                const description = $(this).data('description');
+                const total = $(this).data('total');
+                const available = $(this).data('available');
+                const minimum = $(this).data('minimum');
+                const assigned = $(this).data('assigned') || 0; // Add this data attribute
+
+                // Set form values
+                $('#edit_id').val(id);
+                $('#edit_name').val(name);
+                $('#edit_description').val(description);
+                $('#edit_total_quantity').val(total);
+                $('#edit_available_quantity').val(available);
+                $('#edit_minimum_stock').val(minimum);
+
+                // Show warning if trying to set available less than assigned
+                if (available < assigned) {
+                    $('#editAccessoryModal .modal-body').prepend(
+                        '<div class="alert alert-warning">' +
+                        '<i class="fas fa-exclamation-triangle me-2"></i>' +
+                        'This accessory is assigned to ' + assigned + ' item(s). ' +
+                        'Available quantity cannot be less than ' + assigned + '.' +
+                        '</div>'
+                    );
+                }
+
+                $('#editAccessoryModal').modal('show');
+            });
+
             // Export functionality
             $('#exportBtn').click(function() {
                 window.location.href = 'api/accessories/export.php';

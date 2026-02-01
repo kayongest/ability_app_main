@@ -68,13 +68,15 @@ function getAccessoriesList($item_id)
             INNER JOIN item_accessories ia ON a.id = ia.accessory_id 
             WHERE ia.item_id = ?
         ");
-        $stmt->bind_param("i", $item_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        while ($row = $result->fetch_assoc()) {
-            $accessories[] = $row['name'];
+        if ($stmt) {
+            $stmt->bind_param("i", $item_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            while ($row = $result->fetch_assoc()) {
+                $accessories[] = $row['name'];
+            }
+            $stmt->close();
         }
-        $stmt->close();
     } catch (Exception $e) {
         error_log("Error getting accessories list: " . $e->getMessage());
     }
@@ -112,16 +114,18 @@ try {
         AND status != 'lost'
     ");
 
-    $searchTerm = "%" . $specific_item_name . "%";
-    $specificStmt->bind_param("s", $searchTerm);
-    $specificStmt->execute();
-    $specificResult = $specificStmt->get_result();
+    if ($specificStmt) {
+        $searchTerm = "%" . $specific_item_name . "%";
+        $specificStmt->bind_param("s", $searchTerm);
+        $specificStmt->execute();
+        $specificResult = $specificStmt->get_result();
 
-    if ($row = $specificResult->fetch_assoc()) {
-        $specific_item_count = $row['total_quantity'] ?? 0;
+        if ($row = $specificResult->fetch_assoc()) {
+            $specific_item_count = $row['total_quantity'] ?? 0;
+        }
+
+        $specificStmt->close();
     }
-
-    $specificStmt->close();
 } catch (Exception $e) {
     error_log("Error getting specific item count: " . $e->getMessage());
 }
@@ -150,8 +154,20 @@ try {
     error_log("Error getting category stats: " . $e->getMessage());
 }
 
-// Get recent items
-$recentItems = getRecentItems($conn, 100);
+// Get recent items - WITH ERROR HANDLING
+// Get recent items - WITH ERROR HANDLING
+$recentItems = [];
+try {
+    $recentItems = getRecentItems($conn, 100);
+    error_log("Got " . count($recentItems) . " recent items");
+
+    if (empty($recentItems)) {
+        error_log("No recent items found - table might be empty or error occurred");
+    }
+} catch (Exception $e) {
+    error_log("Error in getRecentItems: " . $e->getMessage());
+    $recentItems = [];
+}
 
 // Get accessories for dropdown
 $accessories = [];
@@ -303,7 +319,7 @@ require_once 'assets/css/chart.css';
                                 Total Equipment
                             </div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                <?php echo $stats['total_items']; ?>
+                                <?php echo $stats['total_items'] ?? 0; ?>
                             </div>
                         </div>
                         <div class="col-auto">
@@ -323,7 +339,7 @@ require_once 'assets/css/chart.css';
                                 Available
                             </div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                <?php echo $stats['available']; ?>
+                                <?php echo $stats['available'] ?? 0; ?>
                             </div>
                         </div>
                         <div class="col-auto">
@@ -343,7 +359,7 @@ require_once 'assets/css/chart.css';
                                 In Use
                             </div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                <?php echo $stats['in_use']; ?>
+                                <?php echo $stats['in_use'] ?? 0; ?>
                             </div>
                         </div>
                         <div class="col-auto">
@@ -363,7 +379,7 @@ require_once 'assets/css/chart.css';
                                 Categories
                             </div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                <?php echo $stats['categories']; ?>
+                                <?php echo $stats['categories'] ?? 0; ?>
                             </div>
                         </div>
                         <div class="col-auto">
@@ -374,6 +390,55 @@ require_once 'assets/css/chart.css';
             </div>
         </div>
     </div>
+
+
+    <style>
+        /* Status Badges */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .status-available {
+            background-color: rgba(75, 192, 192, 0.15);
+            color: #2e8b57;
+            border: 1px solid rgba(75, 192, 192, 0.3);
+        }
+
+        .status-in_use {
+            background-color: rgba(54, 162, 235, 0.15);
+            color: #1e6b8a;
+            border: 1px solid rgba(54, 162, 235, 0.3);
+        }
+
+        .status-maintenance {
+            background-color: rgba(255, 206, 86, 0.15);
+            color: #b8860b;
+            border: 1px solid rgba(255, 206, 86, 0.3);
+        }
+
+        .status-reserved {
+            background-color: rgba(153, 102, 255, 0.15);
+            color: #6a5acd;
+            border: 1px solid rgba(153, 102, 255, 0.3);
+        }
+
+        .status-disposed {
+            background-color: rgba(255, 99, 132, 0.15);
+            color: #780404;
+            border: 1px solid rgba(199, 54, 85, 0.3);
+        }
+
+        .status-lost {
+            background-color: rgba(128, 128, 128, 0.15);
+            color: #696969;
+            border: 1px solid rgba(128, 128, 128, 0.3);
+        }
+    </style>
 
     <!-- Charts and Categories -->
     <div class="row mb-4">
@@ -388,45 +453,118 @@ require_once 'assets/css/chart.css';
                     <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#quickSearchModal">
                         <i class="fas fa-search"></i>
                     </button>
-
                     Find items and check stock instantly
                 </div>
             </div>
+
+            <!-- Get real equipment status data -->
+            <?php
+            // Get equipment status distribution from database
+            $statusData = [];
+            try {
+                $statusQuery = $conn->query("
+                SELECT 
+                    status,
+                    COUNT(*) as count,
+                    ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM items), 1) as percentage
+                FROM items 
+                WHERE status IS NOT NULL
+                GROUP BY status 
+                ORDER BY 
+                    FIELD(status, 'available', 'in_use', 'maintenance', 'reserved', 'disposed', 'lost')
+            ");
+
+                if ($statusQuery) {
+                    $statusData = $statusQuery->fetch_all(MYSQLI_ASSOC);
+                }
+            } catch (Exception $e) {
+                error_log("Error getting status data: " . $e->getMessage());
+            }
+
+            // Prepare data for chart
+            $statusLabels = [];
+            $statusCounts = [];
+            $statusColors = [];
+            $statusPercentages = [];
+
+            foreach ($statusData as $status) {
+                $statusLabels[] = ucfirst($status['status']);
+                $statusCounts[] = $status['count'];
+                $statusPercentages[] = $status['percentage'];
+
+                // Assign colors based on status
+                switch (strtolower($status['status'])) {
+                    case 'available':
+                        $statusColors[] = '#3a869d';
+                        break;
+                    case 'in_use':
+                        $statusColors[] = '#233D4D';
+                        break;
+                    case 'maintenance':
+                        $statusColors[] = '#FF9B51';
+                        break;
+                    case 'reserved':
+                        $statusColors[] = '#B7BDF7';
+                        break;
+                    case 'disposed':
+                        $statusColors[] = '#C3110C';
+                        break;
+                    case 'lost':
+                        $statusColors[] = 'rgba(128, 128, 128, 0.8)';
+                        break;
+                    default:
+                        $statusColors[] = 'rgba(201, 203, 207, 0.8)';
+                }
+            }
+
+            // If no data, show empty state
+            if (empty($statusData)) {
+                $statusLabels = ['No Data'];
+                $statusCounts = [1];
+                $statusColors = ['rgba(202, 205, 210, 0.58)'];
+                $statusPercentages = [100];
+            }
+            ?>
+
             <div class="card shadow">
                 <div class="card-header py-3 d-flex justify-content-between align-items-center text-white" style="background-color: rgba(35, 54, 67, 1);">
                     <h6 class="m-0 font-weight-bold">
-                        <i class="fas fa-list-alt me-2"></i>Top Categories
+                        <i class="fas fa-list-alt me-2"></i>Equipment Status Breakdown
                     </h6>
+                    <button class="btn btn-sm btn-outline-light" onclick="refreshStatusChart()" title="Refresh Data">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-sm table-borderless">
                             <thead>
                                 <tr>
-                                    <th>Category</th>
+                                    <th>Status</th>
                                     <th class="text-end">Count</th>
                                     <th class="text-end">%</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <?php if (!empty($category_stats)): ?>
-                                    <?php foreach (array_slice($category_stats, 0, 8) as $cat): ?>
+                            <tbody id="statusTableBody">
+                                <?php if (!empty($statusData)): ?>
+                                    <?php foreach ($statusData as $status): ?>
                                         <tr>
-                                            <td><?php echo htmlspecialchars($cat['category_name']); ?></td>
-                                            <td class="text-end"><?php echo $cat['item_count']; ?></td>
-                                            <td class="text-end"><?php echo $cat['percentage']; ?>%</td>
+                                            <td>
+                                                <span class="status-badge status-<?php echo strtolower($status['status']); ?>">
+                                                    <i class="fas fa-circle me-1"></i>
+                                                    <?php echo ucfirst($status['status']); ?>
+                                                </span>
+                                            </td>
+                                            <td class="text-end fw-bold"><?php echo $status['count']; ?></td>
+                                            <td class="text-end"><?php echo $status['percentage']; ?>%</td>
                                         </tr>
                                     <?php endforeach; ?>
-                                    <?php if (count($category_stats) > 8): ?>
-                                        <tr>
-                                            <td colspan="3" class="text-center text-muted">
-                                                ... and <?php echo count($category_stats) - 8; ?> more categories
-                                            </td>
-                                        </tr>
-                                    <?php endif; ?>
                                 <?php else: ?>
                                     <tr>
-                                        <td colspan="3" class="text-center text-muted">No category data</td>
+                                        <td colspan="3" class="text-center text-muted">
+                                            <i class="fas fa-chart-pie fa-2x mb-2 d-block"></i>
+                                            No status data available
+                                        </td>
                                     </tr>
                                 <?php endif; ?>
                             </tbody>
@@ -442,16 +580,26 @@ require_once 'assets/css/chart.css';
                     <h6 class="m-0 font-weight-bold">
                         <i class="fas fa-chart-pie me-2"></i>Equipment Status Distribution
                     </h6>
+                    <button class="btn btn-sm btn-outline-light" onclick="refreshStatusChart()" title="Refresh Chart">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
                 </div>
                 <div class="card-body">
                     <div class="chart-container" style="position: relative; height: 300px;">
                         <canvas id="statusChart"></canvas>
+                    </div>
+                    <div class="text-center mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Total Equipment: <span id="totalEquipmentCount"><?php echo $stats['total_items'] ?? 0; ?></span>
+                        </small>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="col-md-4">
+            <!-- Keep your existing Live Time & Calendar section -->
             <div class="card shadow mb-4">
                 <div class="card-header py-3 d-flex justify-content-between align-items-center text-white" style="background-color: rgba(35, 54, 67, 1);">
                     <h6 class="m-0 font-weight-bold">
@@ -496,15 +644,26 @@ require_once 'assets/css/chart.css';
     <!-- Equipment Table -->
     <div class="row">
         <div class="col-lg-12">
+            <!-- Add this in your button group section (around line 532) -->
+
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1 class="h3 mb-0 text-gray-800">Equipments Table</h1>
                 <div class="btn-group">
+
                     <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addItemModal">
                         <i class="fas fa-plus me-1"></i> Add Equipment
                     </button>
-                    <a href="scan.php" class="btn btn-sm btn-success">
+                    <a href="scan.php" class="btn btn-sm btn- text-white" style="background-color: #29843d;">
                         <i class="fas fa-qrcode me-1"></i> Scan QR
                     </a>
+                    <!-- Download All QR Codes Button -->
+                    <button onclick="downloadAllQRCodes()" class="btn btn-sm btn- text-white" style="background-color: #294084;">
+                        <i class="fas fa-download me-1"></i> Download All QR Codes
+                    </button>
+                    <!-- Generate & Download ZIP Button -->
+                    <button onclick="generateAndDownloadQRZipWithProgress()" class="btn btn-sm btn- text-white" style="background-color: #2e7ca7;">
+                        <i class="fas fa-file-archive me-1"></i> Generate & Download ZIP
+                    </button>
                 </div>
             </div>
 
@@ -523,6 +682,7 @@ require_once 'assets/css/chart.css';
                             <thead>
                                 <tr>
                                     <th>ID</th>
+                                    <th>Created At</th>
                                     <th>Item Name</th>
                                     <th>Serial #</th>
                                     <th>Category</th>
@@ -536,27 +696,47 @@ require_once 'assets/css/chart.css';
                                     <th>Actions</th>
                                 </tr>
                             </thead>
-                            <!-- In the table body section -->
                             <tbody>
                                 <?php if (!empty($recentItems)): ?>
                                     <?php foreach ($recentItems as $item): ?>
                                         <tr>
                                             <td><?php echo htmlspecialchars($item['id'] ?? ''); ?></td>
+
+                                            <!-- NEW COLUMN: Created At -->
+                                            <td>
+                                                <?php
+                                                if (!empty($item['created_at'])) {
+                                                    // Format the date for better display
+                                                    $createdDate = new DateTime($item['created_at']);
+                                                    echo '<span class="badge bg-secondary" title="' .
+                                                        htmlspecialchars($item['created_at']) . '">' .
+                                                        $createdDate->format('M d, Y') . '</span><br>' .
+                                                        '<small class="text-muted">' .
+                                                        $createdDate->format('h:i A') . '</small>';
+                                                } else {
+                                                    echo '<span class="text-muted">N/A</span>';
+                                                }
+                                                ?>
+                                            </td>
+
                                             <td>
                                                 <div class="fw-bold"><?php echo htmlspecialchars($item['item_name'] ?? ''); ?></div>
                                                 <?php if (!empty($item['description'])): ?>
-                                                    <small class="text-muted d-block"><?php echo substr(htmlspecialchars($item['description']), 0, 50); ?>...</small>
+                                                    <small class="text-muted d-block"><?php echo substr(htmlspecialchars($item['description'] ?? ''), 0, 50); ?>...</small>
                                                 <?php endif; ?>
                                             </td>
+
                                             <td>
                                                 <code><?php echo htmlspecialchars($item['serial_number'] ?? 'N/A'); ?></code>
                                             </td>
+
                                             <td>
                                                 <?php
-                                                $category = $item['category'] ?? 'Uncategorized';
+                                                $category = $item['category'] ?? ($item['category_id'] ?? 'Uncategorized');
                                                 echo '<span class="badge bg-secondary">' . htmlspecialchars($category) . '</span>';
                                                 ?>
                                             </td>
+
                                             <td>
                                                 <?php
                                                 if (isset($item['id'])) {
@@ -577,14 +757,19 @@ require_once 'assets/css/chart.css';
                                                 }
                                                 ?>
                                             </td>
+
                                             <td>
                                                 <?php echo !empty($item['brand']) ? htmlspecialchars($item['brand']) : '<span class="text-muted">N/A</span>'; ?>
                                             </td>
+
                                             <td>
                                                 <?php echo !empty($item['model']) ? htmlspecialchars($item['model']) : '<span class="text-muted">N/A</span>'; ?>
                                             </td>
-                                            <td><?php echo !empty($item['department']) ? htmlspecialchars($item['department']) : '<span class="text-muted">N/A</span>'; ?></td>
+
+                                            <td><?php echo !empty($item['department']) ? htmlspecialchars($item['department']) : (!empty($item['department_id']) ? 'Dept ID: ' . $item['department_id'] : '<span class="text-muted">N/A</span>'); ?></td>
+
                                             <td><?php echo !empty($item['stock_location']) ? htmlspecialchars($item['stock_location']) : '<span class="text-muted">N/A</span>'; ?></td>
+
                                             <td>
                                                 <?php
                                                 $condition = $item['condition'] ?? 'good';
@@ -608,6 +793,7 @@ require_once 'assets/css/chart.css';
                                                 echo '<span class="badge ' . $conditionClass . '">' . ucfirst($condition) . '</span>';
                                                 ?>
                                             </td>
+
                                             <td>
                                                 <?php
                                                 $status = $item['status'] ?? 'available';
@@ -637,13 +823,14 @@ require_once 'assets/css/chart.css';
                                                 echo '<span class="badge ' . $statusClass . '">' . ucfirst($status) . '</span>';
                                                 ?>
                                             </td>
+
                                             <td>
                                                 <!-- Quick Actions Button -->
                                                 <button type="button" class="btn btn-sm btn-primary quick-view-btn mb-1"
                                                     data-item-id="<?php echo $item['id'] ?? ''; ?>"
                                                     data-item-name="<?php echo htmlspecialchars($item['item_name'] ?? ''); ?>"
                                                     data-item-serial="<?php echo htmlspecialchars($item['serial_number'] ?? ''); ?>"
-                                                    data-item-category="<?php echo htmlspecialchars($item['category'] ?? 'N/A'); ?>"
+                                                    data-item-category="<?php echo htmlspecialchars($item['category'] ?? ($item['category_id'] ?? 'N/A')); ?>"
                                                     data-item-quantity="<?php echo $item['quantity'] ?? 1; ?>"
                                                     data-item-status="<?php echo htmlspecialchars($item['status'] ?? 'available'); ?>"
                                                     data-item-condition="<?php echo htmlspecialchars($item['condition'] ?? 'good'); ?>"
@@ -651,7 +838,7 @@ require_once 'assets/css/chart.css';
                                                     data-item-description="<?php echo htmlspecialchars($item['description'] ?? ''); ?>"
                                                     data-item-brand="<?php echo htmlspecialchars($item['brand'] ?? 'N/A'); ?>"
                                                     data-item-model="<?php echo htmlspecialchars($item['model'] ?? 'N/A'); ?>"
-                                                    data-item-department="<?php echo htmlspecialchars($item['department'] ?? 'N/A'); ?>"
+                                                    data-item-department="<?php echo htmlspecialchars($item['department'] ?? ($item['department_id'] ?? 'N/A')); ?>"
                                                     data-item-accessories="<?php echo htmlspecialchars(getAccessoriesList($item['id'] ?? 0)); ?>"
                                                     data-view-url="items/view.php?id=<?php echo $item['id'] ?? ''; ?>"
                                                     data-edit-url="items/edit.php?id=<?php echo $item['id'] ?? ''; ?>"
@@ -664,7 +851,7 @@ require_once 'assets/css/chart.css';
                                     <?php endforeach; ?>
                                 <?php else: ?>
                                     <tr>
-                                        <td colspan="12" class="text-center">No equipment found</td>
+                                        <td colspan="13" class="text-center">No equipment found</td>
                                     </tr>
                                 <?php endif; ?>
                             </tbody>
@@ -674,6 +861,7 @@ require_once 'assets/css/chart.css';
             </div>
         </div>
     </div>
+
 </div>
 
 <!-- Add Item Modal -->
@@ -955,7 +1143,11 @@ require_once 'assets/css/chart.css';
                                         </span>
                                     </div>
                                 </div>
-                                <div id="qvQRCode" class="text-center"></div>
+                                <!-- In your quick actions modal HTML -->
+                                <div id="qvQRCode" class="text-center">
+                                    <small class="d-block text-muted" id="qrItemName"></small>
+                                    <!-- rest of your QR code HTML -->
+                                </div>
                             </div>
 
                             <!-- Quick Stats -->
@@ -1093,8 +1285,6 @@ require_once 'assets/css/chart.css';
     </div>
 </div>
 
-
-
 <!-- Datalist for autocomplete -->
 <datalist id="itemSuggestions">
     <?php foreach ($allItems as $item): ?>
@@ -1115,6 +1305,418 @@ require_once 'views/partials/footer.php';
 <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
 
 <script>
+    // ========== GLOBAL FUNCTIONS (MUST BE OUTSIDE $(document).ready()) ==========
+
+    // Function to download single QR code
+    function downloadSingleQRCode(qrUrl, itemName, serial) {
+        if (!qrUrl) {
+            toastr.error('No QR code available to download');
+            return;
+        }
+
+        const link = document.createElement('a');
+        link.href = qrUrl;
+
+        // Create a safe filename
+        const safeName = (itemName || 'item')
+            .replace(/[<>:"/\\|?*]/g, '_')
+            .replace(/\s+/g, '_')
+            .substring(0, 50);
+
+        const safeSerial = (serial || 'item').replace(/[^a-z0-9]/gi, '_');
+        link.download = `QR_${safeName}_${safeSerial}.png`;
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        toastr.success('QR Code downloaded!');
+    }
+
+    // Function to download ALL QR codes
+    function downloadAllQRCodes() {
+        // Get all table rows (skip header)
+        const rows = document.querySelectorAll('#recentItemsTable tbody tr');
+
+        if (rows.length === 0) {
+            toastr.error('No items found in the table');
+            return;
+        }
+
+        toastr.info(`Found ${rows.length} items. Checking for QR codes...`);
+
+        let qrCount = 0;
+        const promises = [];
+
+        // Process each row
+        rows.forEach((row, index) => {
+            // Find the quick view button to get item data
+            const quickBtn = row.querySelector('.quick-view-btn');
+            if (!quickBtn) return;
+
+            const itemId = quickBtn.dataset.itemId;
+            const itemName = quickBtn.dataset.itemName || `Item_${index + 1}`;
+            const serial = quickBtn.dataset.itemSerial || '';
+            const qrCode = quickBtn.dataset.qrCode || '';
+
+            if (!qrCode || qrCode === '' || qrCode === 'pending') {
+                console.log(`No QR code for ${itemName}`);
+                return;
+            }
+
+            qrCount++;
+
+            // Create promise for downloading this QR code
+            promises.push(new Promise((resolve) => {
+                setTimeout(() => {
+                    try {
+                        // Clean the filename
+                        const safeName = itemName
+                            .replace(/[<>:"/\\|?*]/g, '')
+                            .replace(/\s+/g, '_')
+                            .substring(0, 50);
+
+                        const safeSerial = serial.replace(/[^a-z0-9]/gi, '_');
+                        const filename = `QR_${safeName}_${safeSerial || 'item'}.png`;
+
+                        // Create download link
+                        const link = document.createElement('a');
+                        link.href = qrCode;
+                        link.download = filename;
+
+                        // Trigger download
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+
+                        console.log(`Downloaded: ${itemName}`);
+                        resolve();
+                    } catch (error) {
+                        console.error(`Error downloading ${itemName}:`, error);
+                        resolve();
+                    }
+                }, index * 500);
+            }));
+        });
+
+        if (qrCount === 0) {
+            toastr.error('No QR codes found in the current table view');
+            return;
+        }
+
+        toastr.info(`Starting download of ${qrCount} QR codes...`);
+
+        // Process all promises
+        Promise.all(promises).then(() => {
+            setTimeout(() => {
+                toastr.success(`Successfully downloaded ${qrCount} QR codes!`);
+            }, 500);
+        });
+    }
+
+    // Function to generate QR code from quick view
+    function generateQRCodeFromQuickView(itemId, itemName) {
+        if (!itemId) {
+            toastr.error('Invalid item ID');
+            return;
+        }
+
+        if (confirm(`Generate QR Code for "${itemName}"?`)) {
+            $.ajax({
+                url: 'api/generate_qr.php',
+                method: 'POST',
+                data: {
+                    item_id: itemId
+                },
+                dataType: 'json',
+                beforeSend: function() {
+                    toastr.info('Generating QR code...');
+                },
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success('QR Code generated successfully!');
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1500);
+                    } else {
+                        toastr.error(response.message || 'Failed to generate QR code');
+                    }
+                },
+                error: function() {
+                    toastr.error('Error generating QR code');
+                }
+            });
+        }
+    }
+
+    // Main function to generate QR codes and download as ZIP
+    function generateAndDownloadQRZip() {
+        // Create confirmation modal HTML
+        const confirmModalHtml = `
+    <div class="modal fade" id="qrConfirmModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Generate QR Codes</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-3">
+                        <i class="fas fa-qrcode fa-3x text-primary mb-3"></i>
+                        <p class="lead">This will generate QR codes for all items and create a ZIP file.</p>
+                        <p class="text-muted">This may take a few moments.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i> Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" id="confirmGenerateBtn">
+                        <i class="fas fa-play me-1"></i> Continue
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    `;
+
+        // Remove existing modal if any
+        $('#qrConfirmModal').remove();
+        $('body').append(confirmModalHtml);
+
+        const confirmModal = new bootstrap.Modal(document.getElementById('qrConfirmModal'));
+        confirmModal.show();
+
+        // Handle confirmation button click
+        $('#confirmGenerateBtn').off('click').on('click', function() {
+            confirmModal.hide();
+            $('#qrConfirmModal').remove();
+            proceedWithQRGeneration();
+        });
+
+        // Handle modal close
+        $('#qrConfirmModal').on('hidden.bs.modal', function() {
+            $('#qrConfirmModal').remove();
+            toastr.info('Operation cancelled.');
+        });
+
+        function proceedWithQRGeneration() {
+            // Disable the button to prevent multiple clicks
+            const button = document.querySelector('button[onclick*="generateAndDownloadQRZipWithProgress"]');
+            if (button) {
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Processing...';
+                button.disabled = true;
+            }
+
+            // Create progress modal
+            const modalHtml = `
+        <div class="modal fade" id="qrZipProgressModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">Generating QR Codes & ZIP</h5>
+                    </div>
+                    <div class="modal-body">
+                        <div class="text-center mb-3">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <span id="qrZipProgressText">Initializing...</span>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div id="qrZipProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 role="progressbar" style="width: 0%">0%</div>
+                        </div>
+                        <div class="mt-3 small text-muted">
+                            <div>Status: <span id="qrZipStatus">Preparing...</span></div>
+                            <div>Progress: <span id="qrZipProgress">0%</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        `;
+
+            // Remove existing modal if any
+            $('#qrZipProgressModal').remove();
+            $('body').append(modalHtml);
+
+            const modal = new bootstrap.Modal(document.getElementById('qrZipProgressModal'));
+            modal.show();
+
+            // Update progress
+            $('#qrZipProgressText').text('Starting QR code generation...');
+            $('#qrZipStatus').text('Connecting to server...');
+
+            // Start the process
+            $.ajax({
+                url: 'api/generate_all_qr_codes.php',
+                method: 'POST',
+                dataType: 'json',
+                xhr: function() {
+                    const xhr = new window.XMLHttpRequest();
+
+                    // Track progress
+                    xhr.addEventListener('progress', function(evt) {
+                        if (evt.lengthComputable) {
+                            const percentComplete = (evt.loaded / evt.total) * 100;
+                            $('#qrZipProgressBar').css('width', percentComplete + '%')
+                                .text(Math.round(percentComplete) + '%');
+                            $('#qrZipProgress').text(Math.round(percentComplete) + '%');
+
+                            if (percentComplete < 100) {
+                                $('#qrZipProgressText').text('Processing...');
+                                $('#qrZipStatus').text('Uploading: ' + Math.round(percentComplete) + '%');
+                            }
+                        }
+                    });
+
+                    return xhr;
+                },
+                beforeSend: function() {
+                    $('#qrZipProgressText').text('Sending request to server...');
+                },
+                success: function(response) {
+                    console.log('Server response:', response);
+
+                    if (response.success) {
+                        $('#qrZipProgressText').text('Processing complete!');
+                        $('#qrZipProgressBar').css('width', '100%').text('100%').removeClass('progress-bar-animated');
+                        $('#qrZipStatus').text('Creating download...');
+                        $('#qrZipProgress').text('100%');
+
+                        setTimeout(() => {
+                            modal.hide();
+                            $('#qrZipProgressModal').remove();
+
+                            toastr.success(response.message);
+
+                            // Trigger download
+                            if (response.download_url) {
+                                const downloadLink = document.createElement('a');
+                                downloadLink.href = response.download_url;
+                                downloadLink.download = response.filename || 'qr_codes.zip';
+                                downloadLink.target = '_blank';
+                                document.body.appendChild(downloadLink);
+                                downloadLink.click();
+                                document.body.removeChild(downloadLink);
+
+                                toastr.success('Download started! Check your downloads folder.');
+                            }
+
+                            // Refresh page after a delay
+                            setTimeout(() => {
+                                location.reload();
+                            }, 3000);
+                        }, 1000);
+                    } else {
+                        modal.hide();
+                        $('#qrZipProgressModal').remove();
+                        toastr.error(response.message || 'Failed to generate QR codes');
+                    }
+
+                    // Re-enable button
+                    if (button) {
+                        button.innerHTML = '<i class="fas fa-file-archive me-1"></i> Generate & Download ZIP';
+                        button.disabled = false;
+                    }
+                },
+                error: function(xhr, status, error) {
+                    modal.hide();
+                    $('#qrZipProgressModal').remove();
+
+                    console.error('Error details:', error);
+                    console.error('XHR response:', xhr.responseText);
+
+                    let errorMessage = 'Failed to generate QR codes';
+
+                    try {
+                        // Try to parse error response
+                        if (xhr.responseText) {
+                            // Check if it's HTML error
+                            if (xhr.responseText.includes('<br') || xhr.responseText.includes('<b>')) {
+                                // Extract just the error message
+                                const tempDiv = document.createElement('div');
+                                tempDiv.innerHTML = xhr.responseText;
+                                const text = tempDiv.textContent || tempDiv.innerText || '';
+
+                                // Find the actual error message
+                                const lines = text.split('\n').filter(line => line.trim());
+                                errorMessage = lines.length > 0 ? lines[0].substring(0, 200) : 'Server error occurred';
+                            } else {
+                                // Try to parse as JSON
+                                const jsonResponse = JSON.parse(xhr.responseText);
+                                if (jsonResponse && jsonResponse.message) {
+                                    errorMessage = jsonResponse.message;
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        errorMessage = xhr.statusText || 'Server error';
+                    }
+
+                    toastr.error('Error: ' + errorMessage);
+
+                    // Re-enable button
+                    if (button) {
+                        button.innerHTML = '<i class="fas fa-file-archive me-1"></i> Generate & Download ZIP';
+                        button.disabled = false;
+                    }
+                }
+            });
+        }
+    }
+
+    // Alias function for backward compatibility
+    function generateAndDownloadQRZipWithProgress() {
+        generateAndDownloadQRZip();
+    }
+
+    // Function to clear image preview
+    function clearImagePreview() {
+        $('#item_image').val('');
+        $('#imagePreview').hide();
+    }
+
+    // Function to generate QR code for item (used in quick view modal)
+    function generateQRCodeForItem(itemId, itemName) {
+        if (!itemId) {
+            toastr.error('Invalid item ID');
+            return;
+        }
+
+        if (confirm(`Generate QR Code for "${itemName}"?`)) {
+            $.ajax({
+                url: 'api/generate_qr.php',
+                method: 'POST',
+                data: {
+                    item_id: itemId,
+                    item_name: itemName
+                },
+                dataType: 'json',
+                beforeSend: function() {
+                    toastr.info('Generating QR code...');
+                },
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success('QR Code generated successfully!');
+                        // Refresh the modal
+                        $('.quick-view-btn[data-item-id="' + itemId + '"]').click();
+                    } else {
+                        toastr.error(response.message || 'Failed to generate QR code');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('QR generation error:', error);
+                    toastr.error('Error generating QR code');
+                }
+            });
+        }
+    }
+
     $(document).ready(function() {
         // Debug: Check table structure
         console.log('=== TABLE DEBUG INFO ===');
@@ -1129,7 +1731,8 @@ require_once 'views/partials/footer.php';
             console.log('Body rows:', bodyRows);
             console.log('First row columns:', firstRowCols);
 
-            if (headerCols !== firstRowCols && firstRowCols === 1) {
+            // Only fix if there's a mismatch and it's the "No equipment found" row
+            if (bodyRows === 1 && firstRowCols === 1 && headerCols === 13) {
                 console.log('⚠️ Fixing table structure...');
 
                 // Get the "No equipment found" message
@@ -1138,23 +1741,24 @@ require_once 'views/partials/footer.php';
                 // Clear the table body
                 $('#recentItemsTable tbody').empty();
 
-                // Add a row with 12 cells to match the header
+                // Add a row with 13 cells to match the header
                 $('#recentItemsTable tbody').append(`
-                    <tr>
-                        <td>-</td>
-                        <td class="text-center">${message}</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
-                    </tr>
-                `);
+                <tr>
+                    <td>-</td>
+                    <td class="text-center">${message}</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+            `);
 
                 console.log('✅ Table structure fixed');
             }
@@ -1175,10 +1779,10 @@ require_once 'views/partials/footer.php';
             }
 
             try {
-                // Initialize DataTable with minimal options
+                // Initialize DataTable with DOM data (not AJAX)
                 const dataTable = $('#recentItemsTable').DataTable({
                     paging: true,
-                    pageLength: 10,
+                    pageLength: 5,
                     lengthChange: true,
                     searching: true,
                     ordering: true,
@@ -1186,7 +1790,7 @@ require_once 'views/partials/footer.php';
                     autoWidth: false,
                     responsive: true,
                     order: [
-                        [0, 'desc']
+                        [1, 'desc'] // Sort by Created At (2nd column) descending
                     ],
                     language: {
                         emptyTable: "No equipment found",
@@ -1201,7 +1805,11 @@ require_once 'views/partials/footer.php';
                             next: "Next",
                             previous: "Previous"
                         }
-                    }
+                    },
+                    // Explicitly tell DataTables to use DOM data
+                    processing: false,
+                    serverSide: false,
+                    ajax: null // Disable AJAX
                 });
 
                 console.log('✅ DataTable initialized successfully');
@@ -1221,8 +1829,52 @@ require_once 'views/partials/footer.php';
         }, 300);
 
         // ========== REFRESH BUTTON ==========
-        $('#refreshItemsBtn').click(function() {
-            location.reload();
+        $('#refreshItemsBtn').click(function(e) {
+            e.preventDefault();
+
+            const button = $(this);
+            const originalHtml = button.html();
+            button.html('<i class="fas fa-spinner fa-spin me-1"></i> Refreshing...');
+            button.prop('disabled', true);
+
+            toastr.info('Refreshing data...');
+
+            // Check if DataTable uses AJAX
+            if ($.fn.DataTable.isDataTable('#recentItemsTable')) {
+                const table = $('#recentItemsTable').DataTable();
+
+                // Check if table uses server-side processing
+                if (table.settings()[0].oFeatures.bServerSide) {
+                    // Reload via AJAX
+                    table.ajax.reload(null, false);
+                } else {
+                    // Destroy and recreate for DOM tables
+                    table.destroy();
+                    setTimeout(() => {
+                        initializeDataTable();
+                    }, 300);
+                }
+            } else {
+                // Simple page reload
+                setTimeout(() => {
+                    location.reload();
+                }, 500);
+            }
+
+            // Re-enable button
+            setTimeout(() => {
+                button.html(originalHtml);
+                button.prop('disabled', false);
+                toastr.success('Data refreshed!');
+            }, 1500);
+        });
+
+        // Add keyboard shortcut: Ctrl+R or Cmd+R to refresh
+        $(document).keydown(function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+                e.preventDefault();
+                $('#refreshItemsBtn').click();
+            }
         });
 
         // ========== IMAGE PREVIEW FUNCTIONALITY ==========
@@ -1279,12 +1931,12 @@ require_once 'views/partials/footer.php';
                 if ($(this).val()) {
                     const accessoryName = $(this).text().split(' (')[0];
                     html += `
-                        <span class="badge bg-info cursor-pointer me-1 mb-1 accessory-badge" 
-                              data-value="${$(this).val()}">
-                            ${accessoryName}
-                            <i class="fas fa-times ms-1"></i>
-                        </span>
-                    `;
+                    <span class="badge bg-info cursor-pointer me-1 mb-1 accessory-badge" 
+                          data-value="${$(this).val()}">
+                        ${accessoryName}
+                        <i class="fas fa-times ms-1"></i>
+                    </span>
+                `;
                 }
             });
             html += '</div>';
@@ -1495,6 +2147,9 @@ require_once 'views/partials/footer.php';
             $('#qvItemDescription').text(data.description || 'No description available');
             $('#qvItemAccessories').text(data.accessories || 'None');
 
+            // Add item name to QR code section
+            $('#qrItemName').text(data.item_name || '');
+
             // Set status badge
             const statusBadge = $('#qvItemStatusBadge');
             statusBadge.removeClass().addClass('badge');
@@ -1561,23 +2216,23 @@ require_once 'views/partials/footer.php';
                      style="width: 100px; height: 100px;" 
                      class="img-fluid border rounded p-1">
                 <div class="mt-2">
-                    <button class="btn btn-sm btn-success mb-1" id="downloadQRBtn">
+                    <button class="btn btn-sm btn-success mb-1 download-qr-btn">
                         <i class="fas fa-download me-1"></i> Download QR
                     </button>
-                    <button class="btn btn-sm btn-info" id="viewQRBtn">
+                    <button class="btn btn-sm btn-info view-qr-btn">
                         <i class="fas fa-expand me-1"></i> View Full
                     </button>
                 </div>
-                <small class="text-muted d-block mt-1">QR Code</small>
+                <small class="text-muted d-block mt-1">${data.item_name || 'QR Code'}</small>
             </div>
         `);
 
                 // Add QR download functionality
-                $('#downloadQRBtn').off('click').on('click', function() {
-                    downloadQRCode(data.qr_code, data.item_name, data.serial_number);
+                $('.download-qr-btn').off('click').on('click', function() {
+                    downloadSingleQRCode(data.qr_code, data.item_name, data.serial_number);
                 });
 
-                $('#viewQRBtn').off('click').on('click', function() {
+                $('.view-qr-btn').off('click').on('click', function() {
                     window.open(data.qr_code, '_blank');
                 });
 
@@ -1588,13 +2243,13 @@ require_once 'views/partials/footer.php';
                     <span class="visually-hidden">Loading...</span>
                 </div>
                 <div class="small mt-2">Generating QR Code...</div>
-                <button class="btn btn-sm btn-outline-primary mt-2" id="generateQrBtn">
+                <button class="btn btn-sm btn-outline-primary mt-2 generate-qr-btn">
                     <i class="fas fa-bolt me-1"></i> Generate Now
                 </button>
             </div>
         `);
 
-                $('#generateQrBtn').off('click').on('click', function() {
+                $('.generate-qr-btn').off('click').on('click', function() {
                     generateQRCodeForItem(data.id, data.item_name);
                 });
 
@@ -1603,13 +2258,13 @@ require_once 'views/partials/footer.php';
             <div class="text-center">
                 <i class="fas fa-qrcode fa-3x text-muted mb-2"></i>
                 <div class="small text-muted mb-2">No QR Code</div>
-                <button class="btn btn-sm btn-primary" id="generateQrBtn">
+                <button class="btn btn-sm btn-primary generate-qr-btn">
                     <i class="fas fa-plus-circle me-1"></i> Generate QR
                 </button>
             </div>
         `);
 
-                $('#generateQrBtn').off('click').on('click', function() {
+                $('.generate-qr-btn').off('click').on('click', function() {
                     generateQRCodeForItem(data.id, data.item_name);
                 });
             }
@@ -1629,66 +2284,6 @@ require_once 'views/partials/footer.php';
                 const newStatus = $(this).data('status');
                 updateItemStatus(data.id, newStatus);
             });
-        }
-
-        // Function to download QR code
-        function downloadQRCode(qrUrl, itemName, serial) {
-            if (!qrUrl) {
-                toastr.error('No QR code available to download');
-                return;
-            }
-
-            // Create a temporary link element
-            const link = document.createElement('a');
-            link.href = qrUrl;
-
-            // Create a safe filename
-            const safeName = itemName.replace(/[^a-z0-9]/gi, '_').substring(0, 50);
-            const safeSerial = serial ? serial.replace(/[^a-z0-9]/gi, '_') : 'item';
-            link.download = `QR_${safeName}_${safeSerial}.png`;
-
-            // Append to body, click, and remove
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            toastr.success('QR Code downloaded!');
-        }
-
-        // Function to generate QR code
-        function generateQRCodeForItem(itemId, itemName) {
-            if (!itemId) {
-                toastr.error('Invalid item ID');
-                return;
-            }
-
-            if (confirm(`Generate QR Code for "${itemName}"?`)) {
-                $.ajax({
-                    url: 'api/generate_qr.php',
-                    method: 'POST',
-                    data: {
-                        item_id: itemId,
-                        item_name: itemName
-                    },
-                    dataType: 'json',
-                    beforeSend: function() {
-                        toastr.info('Generating QR code...');
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            toastr.success('QR Code generated successfully!');
-                            // Refresh the modal
-                            $('.quick-view-btn[data-item-id="' + itemId + '"]').click();
-                        } else {
-                            toastr.error(response.message || 'Failed to generate QR code');
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('QR generation error:', error);
-                        toastr.error('Error generating QR code');
-                    }
-                });
-            }
         }
 
         // Function to update item status
@@ -1828,14 +2423,13 @@ require_once 'views/partials/footer.php';
             </td>`;
 
                 // Start new row after Saturday
-                if ((day + startingDay) % 7 === 0 && day !== daysInMonth) {
+                if ((day + startingDay) % 7 === 0 && day < daysInMonth) {
                     calendarHTML += '</tr><tr>';
                 }
             }
 
-            // Fill remaining empty cells
-            const totalCells = startingDay + daysInMonth;
-            const remainingCells = 7 - (totalCells % 7);
+            // Fill remaining empty cells in the last row
+            const remainingCells = 7 - ((daysInMonth + startingDay) % 7);
             if (remainingCells < 7) {
                 for (let i = 0; i < remainingCells; i++) {
                     calendarHTML += '<td class="p-1" style="width: 14.28%;"></td>';
@@ -1846,94 +2440,495 @@ require_once 'views/partials/footer.php';
             document.getElementById('monthCalendar').innerHTML = calendarHTML;
         }
 
-        // Initial update and set interval
+        // Initialize date/time and update every second
         updateDateTime();
         setInterval(updateDateTime, 1000);
 
-        // ========== STATUS CHART ==========
-        const ctx = document.getElementById('statusChart');
-        if (ctx) {
-            new Chart(ctx.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['Available', 'In Use', 'Maintenance', 'Reserved', 'Disposed', 'Lost'],
-                    datasets: [{
-                        data: [
-                            <?php echo $stats['available']; ?>,
-                            <?php echo $stats['in_use']; ?>,
-                            <?php echo $stats['maintenance']; ?>,
-                            <?php echo $stats['reserved'] ?? 0; ?>,
-                            <?php echo $stats['disposed'] ?? 0; ?>,
-                            <?php echo $stats['lost'] ?? 0; ?>
-                        ],
-                        backgroundColor: [
-                            '#115b25',
-                            '#2d5580',
-                            '#ffc107',
-                            '#50289a',
-                            '#991717',
-                            '#526575'
-                        ],
-                        borderWidth: 1
-                    }]
+        // ========== INITIALIZE TOASTR NOTIFICATIONS ==========
+        toastr.options = {
+            "closeButton": true,
+            "debug": false,
+            "newestOnTop": true,
+            "progressBar": true,
+            "positionClass": "toast-top-right",
+            "preventDuplicates": true,
+            "onclick": null,
+            "showDuration": "300",
+            "hideDuration": "1000",
+            "timeOut": "5000",
+            "extendedTimeOut": "1000",
+            "showEasing": "swing",
+            "hideEasing": "linear",
+            "showMethod": "fadeIn",
+            "hideMethod": "fadeOut"
+        };
+
+        // ========== FILE DROPZONE FUNCTIONALITY ==========
+        const dropzone = document.getElementById('fileDropzone');
+        const fileInput = document.getElementById('item_image');
+
+        if (dropzone && fileInput) {
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropzone.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight() {
+                dropzone.classList.add('border-primary', 'bg-light');
+            }
+
+            function unhighlight() {
+                dropzone.classList.remove('border-primary', 'bg-light');
+            }
+
+            dropzone.addEventListener('drop', handleDrop, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+
+                if (files.length > 0) {
+                    // Check if file is an image
+                    if (files[0].type.startsWith('image/')) {
+                        // Check file size (5MB max)
+                        if (files[0].size > 5 * 1024 * 1024) {
+                            toastr.error('File size must be less than 5MB');
+                            return;
+                        }
+
+                        // Create a DataTransfer object to set files
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(files[0]);
+                        fileInput.files = dataTransfer.files;
+
+                        // Trigger change event
+                        const event = new Event('change', {
+                            bubbles: true
+                        });
+                        fileInput.dispatchEvent(event);
+
+                        toastr.success('Image uploaded successfully!');
+                    } else {
+                        toastr.error('Please upload only image files (JPG, PNG, GIF, WebP)');
+                    }
+                }
+            }
+
+            // Click to select file
+            dropzone.addEventListener('click', () => {
+                fileInput.click();
+            });
+        }
+
+        // ========== AUTO-RESIZE TEXTAREA FOR DESCRIPTION ==========
+        const descriptionTextarea = document.getElementById('description');
+        if (descriptionTextarea) {
+            descriptionTextarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+        }
+
+        // ========== CATEGORY CHANGE EVENT ==========
+        $('#category').on('change', function() {
+            const selectedCategory = $(this).val();
+
+            // Show/hide electronics-specific fields
+            if (selectedCategory === 'electronics' || selectedCategory === 'laptops' ||
+                selectedCategory === 'phones' || selectedCategory === 'tablets') {
+                $('#electronicsFields').show();
+            } else {
+                $('#electronicsFields').hide();
+            }
+
+            // Show/hide furniture-specific fields
+            if (selectedCategory === 'furniture' || selectedCategory === 'office_furniture') {
+                $('#furnitureFields').show();
+            } else {
+                $('#furnitureFields').hide();
+            }
+        });
+
+        // Trigger change event on page load
+        $('#category').trigger('change');
+
+        // ========== CONFIRMATION FOR DELETE ACTIONS ==========
+        $(document).on('click', '.delete-item-btn', function(e) {
+            e.preventDefault();
+            const itemId = $(this).data('item-id');
+            const itemName = $(this).data('item-name');
+
+            if (confirm(`Are you sure you want to delete "${itemName}"? This action cannot be undone.`)) {
+                $.ajax({
+                    url: 'api/items/delete.php',
+                    method: 'POST',
+                    data: {
+                        id: itemId
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            toastr.success(response.message);
+                            setTimeout(() => {
+                                location.reload();
+                            }, 1500);
+                        } else {
+                            toastr.error(response.message);
+                        }
+                    },
+                    error: function() {
+                        toastr.error('Error deleting item');
+                    }
+                });
+            }
+        });
+
+        // ========== EXPORT FUNCTIONALITY ==========
+        $('#exportItemsBtn').click(function() {
+            toastr.info('Preparing export...');
+
+            $.ajax({
+                url: 'api/export_items.php',
+                method: 'POST',
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success && response.download_url) {
+                        const link = document.createElement('a');
+                        link.href = response.download_url;
+                        link.download = response.filename || 'items_export.csv';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+
+                        toastr.success('Export downloaded successfully!');
+                    } else {
+                        toastr.error(response.message || 'Failed to export items');
+                    }
                 },
+                error: function() {
+                    toastr.error('Error exporting items');
+                }
+            });
+        });
+
+        // ========== BULK ACTIONS ==========
+        let selectedItems = [];
+
+        $(document).on('change', '.item-checkbox', function() {
+            const itemId = $(this).val();
+
+            if ($(this).is(':checked')) {
+                selectedItems.push(itemId);
+            } else {
+                selectedItems = selectedItems.filter(id => id !== itemId);
+            }
+
+            // Show/hide bulk actions
+            if (selectedItems.length > 0) {
+                $('#bulkActions').show();
+                $('#selectedCount').text(selectedItems.length);
+            } else {
+                $('#bulkActions').hide();
+            }
+        });
+
+        $('#selectAllItems').on('change', function() {
+            const isChecked = $(this).is(':checked');
+            $('.item-checkbox').prop('checked', isChecked).trigger('change');
+        });
+
+        $('#bulkDeleteBtn').click(function() {
+            if (selectedItems.length === 0) {
+                toastr.warning('No items selected');
+                return;
+            }
+
+            if (confirm(`Are you sure you want to delete ${selectedItems.length} selected item(s)?`)) {
+                $.ajax({
+                    url: 'api/bulk_delete.php',
+                    method: 'POST',
+                    data: {
+                        items: selectedItems
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            toastr.success(response.message);
+                            setTimeout(() => {
+                                location.reload();
+                            }, 1500);
+                        } else {
+                            toastr.error(response.message);
+                        }
+                    },
+                    error: function() {
+                        toastr.error('Error deleting items');
+                    }
+                });
+            }
+        });
+
+        // ========== INITIALIZE TOOLTIPS ==========
+        $(function() {
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        });
+
+        // ========== PERFORMANCE METRICS UPDATE ==========
+        function updatePerformanceMetrics() {
+            $.ajax({
+                url: 'api/get_metrics.php',
+                method: 'GET',
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        // Update total items count
+                        if (response.total_items !== undefined) {
+                            $('#totalItemsCount').text(response.total_items);
+                        }
+
+                        // Update available items
+                        if (response.available_items !== undefined) {
+                            $('#availableItemsCount').text(response.available_items);
+                        }
+
+                        // Update in-use items
+                        if (response.in_use_items !== undefined) {
+                            $('#inUseItemsCount').text(response.in_use_items);
+                        }
+
+                        // Update maintenance items
+                        if (response.maintenance_items !== undefined) {
+                            $('#maintenanceItemsCount').text(response.maintenance_items);
+                        }
+                    }
+                },
+                error: function(xhr, status, error) {
+                    // Silent fail - don't log to console for missing API
+                    if (xhr.status !== 404) {
+                        console.error('Failed to update metrics:', error);
+                    }
+                }
+            });
+        }
+
+        // ========== STATUS CHART INITIALIZATION ==========
+        function initializeStatusChart() {
+            console.log('Initializing status chart with real data...');
+
+            const canvas = document.getElementById('statusChart');
+            if (!canvas) {
+                console.error('Chart canvas (#statusChart) not found');
+                return;
+            }
+
+            // Destroy existing chart if it exists
+            if (window.statusChartInstance) {
+                window.statusChartInstance.destroy();
+            }
+
+            // Get data from PHP variables
+            const statusLabels = <?php echo json_encode($statusLabels); ?>;
+            const statusCounts = <?php echo json_encode($statusCounts); ?>;
+            const statusColors = <?php echo json_encode($statusColors); ?>;
+            const statusPercentages = <?php echo json_encode($statusPercentages); ?>;
+
+            // Create border colors from background colors
+            const borderColors = statusColors.map(color => {
+                return color.replace('0.8', '1');
+            });
+
+            const chartData = {
+                labels: statusLabels,
+                datasets: [{
+                    label: 'Equipment Count',
+                    data: statusCounts,
+                    backgroundColor: statusColors,
+                    borderColor: borderColors,
+                    borderWidth: 2,
+                    hoverOffset: 15,
+                    borderRadius: 8
+                }]
+            };
+
+            // Add percentage data to dataset
+            chartData.datasets[0].percentageData = statusPercentages;
+
+            // Create the chart
+            window.statusChartInstance = new Chart(canvas, {
+                type: 'doughnut',
+                data: chartData,
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            position: 'bottom'
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: {
+                                    size: 12
+                                },
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                generateLabels: function(chart) {
+                                    const data = chart.data;
+                                    if (data.labels.length && data.datasets.length) {
+                                        return data.labels.map(function(label, i) {
+                                            const meta = chart.getDatasetMeta(0);
+                                            const style = meta.controller.getStyle(i);
+                                            const value = data.datasets[0].data[i];
+                                            const percentage = data.datasets[0].percentageData?.[i] ||
+                                                ((value / data.datasets[0].data.reduce((a, b) => a + b, 0)) * 100).toFixed(1);
+
+                                            return {
+                                                text: `${label}: ${value} (${percentage}%)`,
+                                                fillStyle: style.backgroundColor,
+                                                strokeStyle: style.borderColor,
+                                                lineWidth: style.borderWidth,
+                                                hidden: isNaN(data.datasets[0].data[i]) || meta.data[i].hidden,
+                                                index: i
+                                            };
+                                        });
+                                    }
+                                    return [];
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    return `${label}: ${value} items (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '60%',
+                    animation: {
+                        animateScale: true,
+                        animateRotate: true,
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    }
+                },
+                plugins: [{
+                    id: 'centerText',
+                    afterDraw: function(chart) {
+                        const data = chart.data;
+                        const dataset = data.datasets[0];
+
+                        if (dataset.data && dataset.data.length > 0) {
+                            // Check if we have real data (not just the "No Data" placeholder)
+                            const isRealData = data.labels.length > 1 ||
+                                (data.labels.length === 1 && data.labels[0] !== 'No Data');
+
+                            if (isRealData) {
+                                const width = chart.width;
+                                const height = chart.height;
+                                const ctx = chart.ctx;
+                                const total = dataset.data.reduce((a, b) => a + b, 0);
+
+                                ctx.restore();
+                                ctx.font = "bold 16px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+                                ctx.textBaseline = "middle";
+                                ctx.fillStyle = "#233643";
+
+                                const text = total.toString();
+                                const textX = Math.round((width - ctx.measureText(text).width) / 2);
+                                const textY = height / 2;
+
+                                ctx.fillText(text, textX, textY - 10);
+
+                                ctx.font = "12px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+                                const subtitle = "Total Items";
+                                const subtitleX = Math.round((width - ctx.measureText(subtitle).width) / 2);
+                                ctx.fillText(subtitle, subtitleX, textY + 10);
+
+                                ctx.save();
+                            }
                         }
                     }
-                }
+                }]
             });
+
+            console.log('✅ Status chart created with real data');
         }
 
-        // Initialize tooltips
-        $('[data-bs-toggle="tooltip"]').tooltip();
-    });
+        // Function to refresh status chart data
+        function refreshStatusChart() {
+            const refreshBtn = event?.target?.closest('button');
+            if (refreshBtn) {
+                refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                refreshBtn.disabled = true;
+            }
 
+            toastr.info('Refreshing status data...');
 
-
-    // Global functions
-    function downloadQRCode(qrUrl, itemName, serial) {
-        const link = document.createElement('a');
-        link.href = qrUrl;
-        link.download = `QR_${itemName.replace(/[^a-z0-9]/gi, '_')}_${serial || 'item'}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        toastr.success('QR Code downloaded!');
-    }
-
-    function generateQRCodeFromQuickView(itemId, itemName) {
-        if (confirm(`Generate QR Code for "${itemName}"?`)) {
             $.ajax({
-                url: 'api/generate_qr.php',
-                method: 'POST',
-                data: {
-                    item_id: itemId
-                },
+                url: 'api/get_status_chart_data.php',
+                method: 'GET',
                 dataType: 'json',
                 success: function(response) {
                     if (response.success) {
-                        toastr.success('QR Code generated successfully!');
-                        setTimeout(() => {
-                            location.reload();
-                        }, 1500);
+                        // Update the chart
+                        if (window.statusChartInstance) {
+                            window.statusChartInstance.data.labels = response.data.labels;
+                            window.statusChartInstance.data.datasets[0].data = response.data.counts;
+                            window.statusChartInstance.data.datasets[0].backgroundColor = response.data.colors;
+                            window.statusChartInstance.data.datasets[0].borderColor = response.data.colors.map(color =>
+                                color.replace('0.8', '1')
+                            );
+                            window.statusChartInstance.data.datasets[0].percentageData = response.data.percentages;
+                            window.statusChartInstance.update();
+                        }
+
+                        // Update the table
+                        if (response.data.table_html) {
+                            $('#statusTableBody').html(response.data.table_html);
+                        }
+
+                        // Update total count
+                        if (response.data.total) {
+                            $('#totalEquipmentCount').text(response.data.total);
+                        }
+
+                        toastr.success('Status data refreshed!');
                     } else {
-                        toastr.error(response.message || 'Failed to generate QR code');
+                        toastr.error(response.message || 'Failed to refresh data');
                     }
                 },
-                error: function() {
-                    toastr.error('Error generating QR code');
+                error: function(xhr, status, error) {
+                    console.error('Error refreshing chart:', error);
+                    toastr.error('Error refreshing status data');
+                },
+                complete: function() {
+                    if (refreshBtn) {
+                        refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+                        refreshBtn.disabled = false;
+                    }
                 }
             });
         }
-    }
 
-    function clearImagePreview() {
-        $('#item_image').val('');
-        $('#imagePreview').hide();
-    }
+        // Initialize the chart when page loads
+        setTimeout(function() {
+            initializeStatusChart();
+        }, 500);
+
+    }); // End of $(document).ready()
 </script>

@@ -164,6 +164,8 @@ try {
             }
         }
 
+        
+
         // SUCCESS - Return immediate response
         $response['success'] = true;
         $response['message'] = 'Equipment added successfully!';

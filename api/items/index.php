@@ -35,7 +35,7 @@ $error = $_GET['error'] ?? '';
             <button class="btn btn-primary" onclick="exportToExcel()">
                 <i class="fas fa-file-excel me-2"></i>Export
             </button>
-            <a href="items/create.php" class="btn btn-success">
+            <a href="api/items/create.php" class="btn btn-success">
                 <i class="fas fa-plus me-2"></i>Add New Equipment
             </a>
         </div>
@@ -332,7 +332,7 @@ function renderItems(items) {
                     <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
                     <h5>No equipment found</h5>
                     <p class="text-muted">No equipment records match your criteria</p>
-                    <a href="items/create.php" class="btn btn-primary mt-2">
+                    <a href="views/items/create.php" class="btn btn-primary mt-2">
                         <i class="fas fa-plus me-2"></i>Add New Equipment
                     </a>
                 </td>

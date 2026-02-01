@@ -1,19 +1,12 @@
 <?php
 // api/accessories/bulk_assign.php
 session_start();
-
-// Include required files
 require_once __DIR__ . '/../../includes/database_fix.php';
 require_once __DIR__ . '/../../includes/functions.php';
 
 header('Content-Type: application/json');
 
-// Check if user is logged in
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
+if (!isLoggedIn()) {
     echo json_encode([
         'success' => false,
         'message' => 'Authentication required'
@@ -26,118 +19,115 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $db = new DatabaseFix();
         $conn = $db->getConnection();
 
-        // Check if transactions are supported
-        $conn->begin_transaction();
-
-        // Get data
+        // Get POST data
         $accessories = $_POST['accessories'] ?? [];
         $items = $_POST['items'] ?? [];
         $mode = $_POST['mode'] ?? 'add';
 
-        // Validate data
-        if (empty($accessories) || !is_array($accessories)) {
+        // Validate
+        if (empty($accessories)) {
             throw new Exception('No accessories selected');
         }
 
-        if (empty($items) || !is_array($items)) {
+        if (empty($items)) {
             throw new Exception('No equipment items selected');
         }
 
-        // Clean and validate accessory IDs
-        $accessory_ids = [];
-        foreach ($accessories as $acc_id) {
-            $acc_id = intval($acc_id);
-            if ($acc_id > 0) {
-                $accessory_ids[] = $acc_id;
-            }
-        }
+        // Convert to integers
+        $accessory_ids = array_map('intval', $accessories);
+        $item_ids = array_map('intval', $items);
 
-        if (empty($accessory_ids)) {
-            throw new Exception('Invalid accessory selection');
-        }
+        // Start transaction
+        $conn->begin_transaction();
 
-        // Clean and validate item IDs
-        $item_ids = [];
-        foreach ($items as $item_id) {
-            $item_id = intval($item_id);
-            if ($item_id > 0) {
-                $item_ids[] = $item_id;
-            }
-        }
+        try {
+            $totalAssignments = 0;
 
-        if (empty($item_ids)) {
-            throw new Exception('Invalid item selection');
-        }
+            foreach ($item_ids as $item_id) {
+                if ($mode === 'replace') {
+                    // Remove existing assignments for this item
+                    $deleteStmt = $conn->prepare("
+                        DELETE FROM item_accessories WHERE item_id = ?
+                    ");
+                    $deleteStmt->bind_param("i", $item_id);
+                    $deleteStmt->execute();
+                    $deleteStmt->close();
+                }
 
-        $assigned_count = 0;
-        $skipped_count = 0;
+                foreach ($accessory_ids as $accessory_id) {
+                    // Check if already assigned (for add mode)
+                    if ($mode === 'add') {
+                        $checkStmt = $conn->prepare("
+                            SELECT id FROM item_accessories 
+                            WHERE item_id = ? AND accessory_id = ?
+                        ");
+                        $checkStmt->bind_param("ii", $item_id, $accessory_id);
+                        $checkStmt->execute();
+                        $checkStmt->store_result();
 
-        // Process each item
-        foreach ($item_ids as $item_id) {
-            if ($mode === 'replace') {
-                // Remove existing accessories for this item
-                $deleteStmt = $conn->prepare("
-                    DELETE FROM item_accessories WHERE item_id = ?
-                ");
-                $deleteStmt->bind_param("i", $item_id);
-                $deleteStmt->execute();
-                $deleteStmt->close();
-            }
+                        if ($checkStmt->num_rows > 0) {
+                            $checkStmt->close();
+                            continue; // Skip if already assigned
+                        }
+                        $checkStmt->close();
+                    }
 
-            // Assign new accessories
-            foreach ($accessory_ids as $acc_id) {
-                // Check if already assigned
-                $checkStmt = $conn->prepare("
-                    SELECT id FROM item_accessories 
-                    WHERE item_id = ? AND accessory_id = ?
-                ");
-                $checkStmt->bind_param("ii", $item_id, $acc_id);
-                $checkStmt->execute();
-                $checkStmt->store_result();
+                    // Check if accessory has available quantity
+                    $qtyCheck = $conn->prepare("
+                        SELECT available_quantity FROM accessories 
+                        WHERE id = ? AND is_active = 1 AND available_quantity > 0
+                    ");
+                    $qtyCheck->bind_param("i", $accessory_id);
+                    $qtyCheck->execute();
+                    $qtyResult = $qtyCheck->get_result();
+                    $qtyRow = $qtyResult->fetch_assoc();
+                    $qtyCheck->close();
 
-                if ($checkStmt->num_rows === 0) {
-                    // Assign accessory
+                    if (!$qtyRow) {
+                        throw new Exception("Accessory ID $accessory_id is out of stock or not found");
+                    }
+
+                    // Insert assignment
                     $assignStmt = $conn->prepare("
-                        INSERT INTO item_accessories (item_id, accessory_id, created_at)
+                        INSERT INTO item_accessories (item_id, accessory_id, assigned_at)
                         VALUES (?, ?, NOW())
                     ");
-                    $assignStmt->bind_param("ii", $item_id, $acc_id);
-
-                    if ($assignStmt->execute()) {
-                        $assigned_count++;
-                    } else {
-                        error_log("Failed to assign accessory $acc_id to item $item_id: " . $assignStmt->error);
-                    }
+                    $assignStmt->bind_param("ii", $item_id, $accessory_id);
+                    $assignStmt->execute();
                     $assignStmt->close();
-                } else {
-                    $skipped_count++;
+
+                    // Decrement available quantity
+                    $updateStmt = $conn->prepare("
+                        UPDATE accessories 
+                        SET available_quantity = available_quantity - 1 
+                        WHERE id = ?
+                    ");
+                    $updateStmt->bind_param("i", $accessory_id);
+                    $updateStmt->execute();
+                    $updateStmt->close();
+
+                    $totalAssignments++;
                 }
-                $checkStmt->close();
             }
+
+            // Commit transaction
+            $conn->commit();
+
+            echo json_encode([
+                'success' => true,
+                'message' => "Successfully assigned $totalAssignments accessory(s)",
+                'assignments' => $totalAssignments
+            ]);
+        } catch (Exception $e) {
+            $conn->rollback();
+            throw $e;
         }
-
-        $conn->commit();
-
-        echo json_encode([
-            'success' => true,
-            'message' => "Successfully assigned accessories to " . count($item_ids) . " items. " .
-                "$assigned_count new assignments made, $skipped_count already existed.",
-            'assigned_count' => $assigned_count,
-            'skipped_count' => $skipped_count
-        ]);
 
         $db->close();
     } catch (Exception $e) {
-        // Rollback transaction on error
-        if (isset($conn) && method_exists($conn, 'rollback')) {
-            $conn->rollback();
-        }
-
-        error_log("Bulk assign error: " . $e->getMessage());
-
         echo json_encode([
             'success' => false,
-            'message' => 'Error: ' . $e->getMessage()
+            'message' => $e->getMessage()
         ]);
     }
 } else {

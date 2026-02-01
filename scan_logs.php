@@ -362,7 +362,7 @@ require_once 'views/partials/header.php';
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0 text-gray-800">
-            <i class="fas fa-history me-2"></i>Scan Logs
+            <i class="fas fa-list me-2"></i>Scan History
         </h1>
         <div>
             <a href="scan.php" class="btn btn-primary">

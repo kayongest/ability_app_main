@@ -432,10 +432,79 @@ main {
 }
 
 .custom-toast {
-  min-width: 300px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 320px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08);
   border: none;
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95);
+  border-left: 4px solid;
+  font-family: "Titillium Web", sans-serif;
+  font-weight: 500;
+  animation: slideInRight 0.3s ease-out;
+}
+
+.custom-toast.toast-success {
+  border-left-color: #10b981;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(255, 255, 255, 0.95));
+}
+
+.custom-toast.toast-error {
+  border-left-color: #ef4444;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(255, 255, 255, 0.95));
+}
+
+.custom-toast.toast-warning {
+  border-left-color: #f59e0b;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(255, 255, 255, 0.95));
+}
+
+.custom-toast.toast-info {
+  border-left-color: #3b82f6;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(255, 255, 255, 0.95));
+}
+
+.custom-toast .toast-message {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #374151;
+}
+
+.custom-toast .toast-title {
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 4px;
+  color: #1f2937;
+}
+
+.custom-toast .toast-close-button {
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.custom-toast .toast-close-button:hover {
+  opacity: 1;
+}
+
+.custom-toast .toast-progress {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  height: 3px;
+  border-radius: 0 0 12px 12px;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.toast-container .toast {
+  margin-bottom: 12px;
 }
 
 /* Form Controls */
