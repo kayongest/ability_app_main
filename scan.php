@@ -1,5 +1,6 @@
 <?php
 // scan.php - WITH CHECK IN/OUT MODAL
+$current_page = basename(__FILE__);
 require_once 'bootstrap.php';
 
 // Check authentication

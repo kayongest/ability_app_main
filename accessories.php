@@ -1,5 +1,6 @@
 <?php
 // accessories.php - Accessory Management Page
+$current_page = basename(__FILE__);
 session_start();
 
 // Include required files directly

@@ -78,6 +78,17 @@ if (!defined('BASE_URL')) {
     <!-- jsPDF AutoTable plugin -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
+    <!-- Initialize dropdowns -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ensure Bootstrap dropdowns work
+            var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'))
+            var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
+                return new bootstrap.Dropdown(dropdownToggleEl)
+            });
+        });
+    </script>
+
 </head>
 
 <body>
@@ -144,6 +155,16 @@ if (!defined('BASE_URL')) {
                             <i class="fas fa-chart-bar me-1"></i> Reports
                         </a>
                     </li>
+                    <!-- User Management (Admin only) -->
+                    <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
+                        <li class="nav-item">
+                            <a class="nav-link <?php echo ($current_page == 'users.php') ? 'active' : ''; ?>"
+                                href="<?php echo BASE_URL; ?>users.php">
+                                <i class="fas fa-users me-1"></i> User Management
+                            </a>
+                        </li>
+                    <?php endif; ?>
+
                     <!-- Keep settings dropdown as it has multiple items -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle <?php echo (in_array($current_page, ['categories.php', 'departments.php', 'locations.php'])) ? 'active' : ''; ?>"
@@ -172,8 +193,10 @@ if (!defined('BASE_URL')) {
                                 role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-user-circle me-1"></i>
                                 <span class="d-none d-md-inline me-2"><?php echo htmlspecialchars($_SESSION['username'] ?? 'User'); ?></span>
+                                <i class="fas fa-chevron-down ms-1" style="font-size: 0.8em;"></i>
                             </a>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userDropdown">
+                                <li><h6 class="dropdown-header"><?php echo htmlspecialchars($_SESSION['username'] ?? 'User'); ?></h6></li>
                                 <li><a class="dropdown-item" href="<?php echo BASE_URL; ?>profile.php">
                                         <i class="fas fa-user me-2"></i> Profile
                                     </a></li>

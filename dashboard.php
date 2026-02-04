@@ -38,6 +38,7 @@ if (!isLoggedIn()) {
 }
 
 // Set page variables
+$current_page = basename(__FILE__);
 $pageTitle = "Dashboard - aBility";
 $showBreadcrumb = true;
 $breadcrumbItems = [
@@ -1670,10 +1671,119 @@ require_once 'views/partials/footer.php';
         }
     }
 
-    // Alias function for backward compatibility
+    // Function to generate QR codes and download as ZIP
     function generateAndDownloadQRZipWithProgress() {
-        generateAndDownloadQRZip();
+        // Disable the button to prevent multiple clicks
+        const button = document.querySelector('button[onclick*="generateAndDownloadQRZipWithProgress"]');
+        if (button) {
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Processing...';
+            button.disabled = true;
+        }
+
+        toastr.info('Starting QR code generation...');
+
+        // Create a simple progress modal
+        const modalHtml = `
+<div class="modal fade" id="qrProcessingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Generating QR Codes</h5>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p>Generating QR codes for all items...</p>
+                    <p class="text-muted small">This may take a few moments.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>`;
+
+        // Remove existing modal if any
+        $('#qrProcessingModal').remove();
+        $('body').append(modalHtml);
+
+        const modal = new bootstrap.Modal(document.getElementById('qrProcessingModal'));
+        modal.show();
+
+        // Make the AJAX call
+        $.ajax({
+            url: 'api/quick_qr_zip.php',
+            method: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                console.log('Response:', response);
+
+                // Close modal first
+                modal.hide();
+                setTimeout(() => {
+                    $('#qrProcessingModal').remove();
+                }, 300);
+
+                if (response.success) {
+                    toastr.success(response.message);
+
+                    // Trigger download immediately
+                    if (response.download_url) {
+                        const link = document.createElement('a');
+                        link.href = response.download_url;
+                        link.download = response.filename || 'qr_codes.zip';
+                        link.style.display = 'none';
+                        document.body.appendChild(link);
+                        link.click();
+                        
+                        // Clean up after a short delay
+                        setTimeout(() => {
+                            document.body.removeChild(link);
+                            toastr.success('Download started! Check your downloads folder.');
+                        }, 100);
+                    }
+                } else {
+                    toastr.error(response.message || 'Failed to generate QR codes');
+                }
+
+                // Re-enable button
+                if (button) {
+                    button.innerHTML = '<i class="fas fa-file-archive me-1"></i> Generate & Download ZIP';
+                    button.disabled = false;
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error:', error);
+                console.log('Response:', xhr.responseText);
+
+                modal.hide();
+                $('#qrProcessingModal').remove();
+
+                let errorMessage = 'Failed to generate QR codes';
+
+                try {
+                    // Try to parse as JSON
+                    const jsonResponse = JSON.parse(xhr.responseText);
+                    if (jsonResponse && jsonResponse.message) {
+                        errorMessage = jsonResponse.message;
+                    }
+                } catch (e) {
+                    // If not JSON, show raw error
+                    errorMessage = 'Server error: ' + error;
+                }
+
+                toastr.error(errorMessage);
+
+                // Re-enable button
+                if (button) {
+                    button.innerHTML = '<i class="fas fa-file-archive me-1"></i> Generate & Download ZIP';
+                    button.disabled = false;
+                }
+            }
+        });
     }
+
 
     // Function to clear image preview
     function clearImagePreview() {

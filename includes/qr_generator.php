@@ -44,21 +44,21 @@ if (!function_exists('generateQRCodeForItem')) {
             return $relativePath;
         }
 
-        // Generate QR data
+        // Generate QR data - OPTIMIZED to reduce size and prevent overflow
+        // Using shortened keys and minimal data to stay under 864 bit limit
         $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
         $host = $_SERVER['HTTP_HOST'];
         $url = $protocol . $host . '/ability_app-master/items/view.php?id=' . $item_id;
 
+        // Option 1: Minimal data approach (recommended)
         $qrData = [
-            'id' => (int)$item_id,
-            'name' => $item_name,
-            'serial' => $serial_number,
-            'location' => $stock_location,
-            'url' => $url,
-            'type' => 'equipment',
-            'timestamp' => time(),
-            'system' => 'aBility Manager'
+            'i' => (int)$item_id,
+            'n' => substr($item_name, 0, 20),  // Limit name to 20 chars
+            's' => $serial_number
         ];
+
+        // Option 2: URL-only approach (alternative - uncomment to use)
+        // $qrDataString = $url;
 
         $qrDataString = json_encode($qrData, JSON_UNESCAPED_SLASHES);
 

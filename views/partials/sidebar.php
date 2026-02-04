@@ -73,6 +73,27 @@ $current_page = basename($_SERVER['PHP_SELF']);
                     Reports
                 </a>
             </li>
+
+            <?php if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'manager'])): ?>
+            <li class="dropdown <?php echo (in_array($current_page, ['users.php', 'technicians.php'])) ? 'active' : ''; ?>">
+                <a href="#userManagementSubmenu" data-bs-toggle="collapse" class="dropdown-toggle">
+                    <i class="fas fa-users-cog me-2"></i>
+                    User Management
+                </a>
+                <ul class="collapse list-unstyled" id="userManagementSubmenu">
+                    <li>
+                        <a href="<?php echo BASE_URL; ?>users.php" class="<?php echo ($current_page == 'users.php') ? 'active' : ''; ?>">
+                            <i class="fas fa-users me-2"></i> Users
+                        </a>
+                    </li>
+                    <li>
+                        <a href="<?php echo BASE_URL; ?>technicians.php" class="<?php echo ($current_page == 'technicians.php') ? 'active' : ''; ?>">
+                            <i class="fas fa-user-hard-hat me-2"></i> Technicians
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <?php endif; ?>
         </ul>
     </div>
 
