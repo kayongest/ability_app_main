@@ -658,52 +658,45 @@ if (!file_exists($libraryPath)) {
                         <h6 class="mb-0"><i class="fas fa-user-lock me-2"></i>Technician Authentication Required</h6>
                     </div>
                     <div class="card-body">
-                        <!-- Wrap authentication in a form to fix the warning -->
-                        <form id="authForm" onsubmit="event.preventDefault(); authenticateTechnician(); return false;">
+                        <!-- Authentication Section -->
+                        <div class="auth-section">
+                            <h6 class="mb-3">
+                                <i class="fas fa-user-shield me-1"></i>Technician Authentication
+                                <small class="text-muted ms-2">(Verified by Stock Controller)</small>
+                            </h6>
+
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label for="technicianSelect" class="form-label">
-                                        <i class="fas fa-user-cog me-1"></i> Requested By (Technician) *
-                                    </label>
-                                    <select class="form-select" id="technicianSelect" required>
+                                    <label class="form-label">Select Technician</label>
+                                    <select id="technicianSelect" class="form-select">
                                         <option value="">-- Select Technician --</option>
-                                        <option value="kayonga_raul">Kayonga Raul</option>
-                                        <option value="mudacumura_irene">Mudacumura Irene</option>
-                                        <option value="hirwa_aubin">Hirwa Aubin</option>
-                                        <option value="valentin">Valentin</option>
-                                        <option value="john_doe">John Doe</option>
-                                        <option value="jane_smith">Jane Smith</option>
-                                        <!-- Options will be populated from database -->
                                     </select>
-                                    <small class="form-text text-muted">Select the technician requesting these items</small>
+                                    <div id="authTechnicianInfo" class="mt-2 d-none"></div>
                                 </div>
+
                                 <div class="col-md-6">
-                                    <label for="technicianPassword" class="form-label">
-                                        <i class="fas fa-key me-1"></i> Technician Password *
-                                    </label>
+                                    <label class="form-label">Technician Password</label>
                                     <div class="input-group">
-                                        <input type="password" class="form-control" id="technicianPassword"
-                                            placeholder="Enter technician's password" required>
+                                        <input type="password" id="technicianPassword" class="form-control"
+                                            placeholder="Enter technician's password">
                                         <button class="btn btn-outline-secondary" type="button" id="togglePassword">
                                             <i class="fas fa-eye"></i>
                                         </button>
                                     </div>
-                                    <small class="form-text text-muted">Enter the selected technician's password for authentication</small>
+                                    <div id="authStatus" class="mt-2"></div>
                                 </div>
                             </div>
-                            <div class="row mt-3">
-                                <div class="col-md-12">
-                                    <button type="submit" class="btn btn-primary" id="authenticateBtn">
-                                        <i class="fas fa-fingerprint me-1"></i> Authenticate Technician
-                                    </button>
-                                    <span id="authStatus" class="ms-3"></span>
-                                </div>
+
+                            <div class="text-center mt-3">
+                                <button id="authenticateBtn" class="btn btn-primary" disabled>
+                                    <i class="fas fa-user-check me-1"></i>Verify Technician
+                                </button>
                             </div>
-                        </form>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Authentication Status (Hidden by default) -->
+                <!-- Authentication Success (Hidden by default) -->
                 <div id="authSuccessSection" class="d-none">
                     <!-- Top Info Section -->
                     <div class="row mb-4">
@@ -724,7 +717,8 @@ if (!file_exists($libraryPath)) {
                                     <i class="fas fa-user-tie fa-2x me-3"></i>
                                     <div>
                                         <h6 class="mb-1"><i class="fas fa-user-shield me-1"></i> Stock Controller</h6>
-                                        <p class="mb-0">Logged in as: <strong><?php echo htmlspecialchars($_SESSION['username'] ?? 'System'); ?></strong></p>
+                                        <p class="mb-0">Logged in as: <strong id="submittedByDisplay"><?php echo htmlspecialchars($_SESSION['username'] ?? 'System'); ?></strong></p>
+                                        <small>Full Name: <span id="submittedByFullName"><?php echo htmlspecialchars($_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Stock Controller'); ?></span></small>
                                     </div>
                                 </div>
                             </div>
@@ -746,7 +740,13 @@ if (!file_exists($libraryPath)) {
                                                 <label for="stockLocation" class="form-label">
                                                     <i class="fas fa-warehouse me-1"></i> Stock Location *
                                                 </label>
-                                                <input type="text" class="form-control" id="stockLocation" value="KCC" required>
+                                                <select id="stockLocation" class="form-select" required>
+                                                    <option value="">-- Select Location --</option>
+                                                    <option value="KCC">KCC</option>
+                                                    <option value="Warehouse A">Warehouse A</option>
+                                                    <option value="Site Office">Site Office</option>
+                                                    <option value="Storage Room">Storage Room</option>
+                                                </select>
                                             </div>
                                             <div class="col-md-6">
                                                 <label for="eventName" class="form-label">
@@ -794,21 +794,24 @@ if (!file_exists($libraryPath)) {
                                                 <label for="requestedBy" class="form-label">
                                                     <i class="fas fa-user-edit me-1"></i> Requested By *
                                                 </label>
-                                                <input type="text" class="form-control" id="requestedBy" readonly value="Technician">
+                                                <input type="text" class="form-control bg-light" id="requestedBy"
+                                                    placeholder="Select and verify technician first" readonly>
+                                                <small class="text-muted">Auto-filled after technician verification</small>
                                             </div>
                                             <div class="col-md-6">
-                                                <label for="approvedBy" class="form-label">
-                                                    <i class="fas fa-user-shield me-1"></i> Approved By *
+                                                <label for="submittedBy" class="form-label">
+                                                    <i class="fas fa-user-shield me-1"></i> Submitted By *
                                                 </label>
-                                                <input type="text" class="form-control" id="approvedBy"
-                                                    value="<?php echo htmlspecialchars($_SESSION['username'] ?? 'Stock Controller'); ?>" readonly>
+                                                <input type="text" class="form-control bg-light" id="submittedBy"
+                                                    value="<?php echo htmlspecialchars($_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Stock Controller'); ?>" readonly>
+                                                <small class="text-muted">Stock Controller</small>
                                             </div>
                                             <div class="col-md-12">
                                                 <label for="approvalNotes" class="form-label">
                                                     <i class="fas fa-sticky-note me-1"></i> Approval Notes
                                                 </label>
                                                 <textarea class="form-control" id="approvalNotes" rows="2"
-                                                    placeholder="Additional approval notes..."></textarea>
+                                                    placeholder="Notes from stock controller approval..."></textarea>
                                             </div>
                                         </div>
                                     </form>
@@ -889,16 +892,19 @@ if (!file_exists($libraryPath)) {
                                                 <label for="batchAction" class="form-label">Apply Action to All Items</label>
                                                 <select class="form-select" id="batchAction">
                                                     <option value="">No Action (Keep Current)</option>
+                                                    <option value="release">Release for Use</option>
+                                                    <option value="transfer">Transfer to Location</option>
+                                                    <option value="maintenance">Send for Maintenance</option>
+                                                    <option value="return">Return to Stock</option>
                                                     <option value="check_in">Check In All</option>
                                                     <option value="check_out">Check Out All</option>
-                                                    <option value="maintenance">Mark All as Maintenance</option>
                                                     <option value="available">Mark All as Available</option>
                                                 </select>
                                                 <small class="form-text text-muted">This will override individual item statuses</small>
                                             </div>
                                             <div class="col-md-6 mb-3">
                                                 <label for="batchLocation" class="form-label">Set Destination for All Items</label>
-                                                <input type="text" class="form-control" id="batchLocation" value="KCC">
+                                                <input type="text" class="form-control" id="batchLocation" value="KCC" placeholder="Where items are going">
                                                 <small class="form-text text-muted">Default: KCC (change if needed)</small>
                                             </div>
                                         </div>
@@ -940,7 +946,7 @@ if (!file_exists($libraryPath)) {
                                             <li>All items listed are accurate and verified</li>
                                             <li>Job details and approval information are correct</li>
                                             <li>This submission is authorized for processing</li>
-                                            <li>Submitted by: <strong><?php echo htmlspecialchars($_SESSION['username'] ?? 'Stock Controller'); ?></strong> (Stock Controller)</li>
+                                            <li>Submitted by: <strong><?php echo htmlspecialchars($_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Stock Controller'); ?></strong> (Stock Controller)</li>
                                         </ul>
                                     </label>
                                 </div>
@@ -1283,6 +1289,9 @@ if (!file_exists($libraryPath)) {
     // Modal control
     let modalOpenInProgress = false;
 
+    // ADD THIS FLAG to track submission state
+    let isSubmitting = false;
+
     // ==================== INITIALIZATION ====================
     document.addEventListener('DOMContentLoaded', function() {
         console.log('🔍 Scan & Batch page loading...');
@@ -1366,11 +1375,42 @@ if (!file_exists($libraryPath)) {
             batchSubmitModal.addEventListener('shown.bs.modal', function(event) {
                 console.log('Modal shown, initializing authentication...');
                 initializeTechnicianAuthentication();
+
+                // Restore technician from sessionStorage if exists
+                const savedTech = sessionStorage.getItem('authenticatedTechnician');
+                if (savedTech && !authenticatedTechnician) {
+                    authenticatedTechnician = JSON.parse(savedTech);
+                    isTechnicianAuthenticated = true;
+                    console.log('🔍 Restored technician from sessionStorage:', authenticatedTechnician);
+
+                    // Update UI to show restored technician
+                    if (authenticatedTechnician && document.getElementById('requestedBy')) {
+                        document.getElementById('requestedBy').value = authenticatedTechnician.full_name;
+                        document.getElementById('confirmationTechnicianName').textContent = authenticatedTechnician.full_name;
+                        document.getElementById('authSuccessSection').classList.remove('d-none');
+                        document.getElementById('printPreviewBtn').disabled = false;
+                        document.getElementById('confirmBatchSubmit').disabled = false;
+                        document.getElementById('submitBatchBtn').disabled = false;
+
+                        // Also update the confirmation checkbox
+                        const confirmCheckbox = document.getElementById('confirmBatchSubmit');
+                        if (confirmCheckbox) {
+                            confirmCheckbox.checked = true;
+                            confirmCheckbox.dispatchEvent(new Event('change'));
+                        }
+                    }
+                }
             });
 
+            // CHANGE THIS: Only reset authentication if NOT submitting
             batchSubmitModal.addEventListener('hidden.bs.modal', function(event) {
-                console.log('Modal hidden, resetting authentication...');
-                resetTechnicianAuthentication();
+                console.log('Modal hidden, checking submission state...');
+                if (!isSubmitting) {
+                    console.log('Not submitting, resetting authentication...');
+                    resetTechnicianAuthentication();
+                } else {
+                    console.log('Submission in progress, keeping authentication data');
+                }
             });
         }
 
@@ -1431,11 +1471,11 @@ if (!file_exists($libraryPath)) {
     // ==================== SCANNER FUNCTIONS ====================
     async function loadCameras() {
         console.log('📷 Loading cameras...');
-        updateScannerStatus('Camera system initializing...');
+        updateScannerStatus('Loading cameras...');
 
         const cameraSelect = document.getElementById('cameraSelect');
         cameraSelect.disabled = true;
-        cameraSelect.innerHTML = '<option value="">Initializing camera system...</option>';
+        cameraSelect.innerHTML = '<option value="">Loading cameras...</option>';
 
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
             console.error('❌ Camera API not supported');
@@ -1445,11 +1485,48 @@ if (!file_exists($libraryPath)) {
             return;
         }
 
-        console.log('✅ Camera API available - will load on demand');
-        updateScannerStatus('Camera system ready');
+        try {
+            // First, try to enumerate devices without asking for permission
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(device => device.kind === 'videoinput');
 
-        cameraSelect.innerHTML = '<option value="">Click "Start Scanner" to activate camera</option>';
-        document.getElementById('startBtn').disabled = false;
+            if (videoDevices.length > 0 && videoDevices[0].deviceId) {
+                // Cameras are already accessible
+                console.log(`✅ Found ${videoDevices.length} camera(s)`);
+                availableCameras = videoDevices;
+                updateCameraSelect(videoDevices);
+                updateScannerStatus('Camera ready');
+            } else {
+                // Need to request permission
+                console.log('🔄 Requesting camera permission...');
+                updateCameraSelect([]);
+                cameraSelect.innerHTML = '<option value="">Click "Refresh Cameras" or "Start Scanner" to activate</option>';
+                updateScannerStatus('Click "Refresh Cameras" to enable');
+            }
+        } catch (error) {
+            console.error('❌ Camera enumeration error:', error);
+            updateScannerStatus('Camera access needed');
+            cameraSelect.innerHTML = '<option value="">Click "Refresh Cameras" to enable</option>';
+        }
+    }
+    // Add this function to your scanner functions section
+    function refreshCameras() {
+        console.log('🔄 Refreshing camera list...');
+        updateScannerStatus('Refreshing cameras...');
+
+        // Clear current selection and reload
+        const cameraSelect = document.getElementById('cameraSelect');
+        cameraSelect.innerHTML = '<option value="">Loading cameras...</option>';
+        cameraSelect.disabled = true;
+
+        // Reset camera state
+        if (html5QrCode && isScanning) {
+            stopScanner().then(() => {
+                loadCameras();
+            });
+        } else {
+            loadCameras();
+        }
     }
 
     async function handleStartScanner() {
@@ -2204,14 +2281,17 @@ if (!file_exists($libraryPath)) {
 
     // ==================== TECHNICIAN AUTHENTICATION FUNCTIONS ====================
     function initializeTechnicianAuthentication() {
-        console.log('🔐 Initializing technician authentication...');
+        console.log('🔐 Initializing technician authentication (Stock Controller Mode)...');
 
         // Clear any previous authentication
         isTechnicianAuthenticated = false;
         authenticatedTechnician = null;
 
+        // Set stock controller name (readonly, from session)
+        setStockControllerName();
+
         // Load technicians from database
-        loadTechnicians();
+        loadTechniciansForStockController();
 
         // Setup event listeners
         setupAuthEventListeners();
@@ -2220,20 +2300,43 @@ if (!file_exists($libraryPath)) {
         resetAuthUI();
     }
 
+    function setStockControllerName() {
+        // Get stock controller name from PHP session (set in your main page)
+        const stockControllerName = "<?php echo htmlspecialchars($_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Stock Controller'); ?>";
+        const stockControllerUsername = "<?php echo htmlspecialchars($_SESSION['username'] ?? 'Stock Controller'); ?>";
+
+        // Set in hidden field for submission
+        const submittedByField = document.getElementById('submittedBy');
+        if (submittedByField) {
+            submittedByField.value = stockControllerName;
+            submittedByField.setAttribute('readonly', 'readonly');
+            submittedByField.classList.add('bg-light');
+        }
+
+        // Also set in display field if it exists
+        const submittedByDisplay = document.getElementById('submittedByDisplay');
+        if (submittedByDisplay) {
+            submittedByDisplay.textContent = stockControllerName;
+        }
+
+        return stockControllerName;
+    }
+
     function setupAuthEventListeners() {
         const toggleBtn = document.getElementById('togglePassword');
         const authBtn = document.getElementById('authenticateBtn');
         const technicianSelect = document.getElementById('technicianSelect');
         const passwordInput = document.getElementById('technicianPassword');
+        const confirmCheckbox = document.getElementById('confirmBatchSubmit');
 
         if (toggleBtn) {
             toggleBtn.addEventListener('click', togglePasswordVisibility);
         }
 
         if (authBtn) {
-            authBtn.addEventListener('click', authenticateTechnician);
+            authBtn.addEventListener('click', authenticateTechnicianAsStockController);
             authBtn.disabled = true;
-            authBtn.innerHTML = '<i class="fas fa-fingerprint me-1"></i> Authenticate Technician';
+            authBtn.innerHTML = '<i class="fas fa-user-check me-1"></i> Verify Technician';
         }
 
         if (technicianSelect) {
@@ -2243,6 +2346,15 @@ if (!file_exists($libraryPath)) {
         if (passwordInput) {
             passwordInput.addEventListener('input', updateAuthButtonState);
         }
+
+        if (confirmCheckbox) {
+            confirmCheckbox.addEventListener('change', function() {
+                const submitBtn = document.getElementById('submitBatchBtn');
+                if (submitBtn) {
+                    submitBtn.disabled = !(this.checked && isTechnicianAuthenticated);
+                }
+            });
+        }
     }
 
     function resetAuthUI() {
@@ -2251,45 +2363,86 @@ if (!file_exists($libraryPath)) {
         const printBtn = document.getElementById('printPreviewBtn');
         const submitBtn = document.getElementById('submitBatchBtn');
         const authStatus = document.getElementById('authStatus');
+        const requestedByField = document.getElementById('requestedBy');
 
         if (authSection) authSection.classList.add('d-none');
-        if (confirmCheckbox) confirmCheckbox.checked = false;
+        if (confirmCheckbox) {
+            confirmCheckbox.checked = false;
+            confirmCheckbox.disabled = true;
+        }
         if (printBtn) printBtn.disabled = true;
         if (submitBtn) {
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-lock me-1"></i> Awaiting Authentication';
         }
         if (authStatus) authStatus.innerHTML = '';
+        if (requestedByField) {
+            requestedByField.value = '';
+            requestedByField.setAttribute('readonly', 'readonly');
+            requestedByField.classList.add('bg-light');
+            requestedByField.placeholder = 'Select and verify technician first';
+        }
+
+        // Reset the submittedBy field
+        setStockControllerName();
     }
 
     function handleTechnicianSelectChange() {
+        const select = document.getElementById('technicianSelect');
+        const selectedOption = select.options[select.selectedIndex];
+        const authInfoDiv = document.getElementById('authTechnicianInfo');
+
+        // Clear previous info
         document.getElementById('technicianPassword').value = '';
         document.getElementById('authStatus').innerHTML = '';
+
+        // Show technician info if a technician is selected
+        if (selectedOption.value) {
+            const fullName = selectedOption.dataset.fullname;
+            const department = selectedOption.dataset.department;
+            const email = selectedOption.dataset.email;
+
+            if (authInfoDiv) {
+                authInfoDiv.innerHTML = `
+                <div class="selected-technician-info">
+                    <div class="fw-bold">${escapeHtml(fullName)}</div>
+                    ${department ? `<div><small class="text-muted">${escapeHtml(department)}</small></div>` : ''}
+                    ${email ? `<div><small><i class="fas fa-envelope me-1"></i>${escapeHtml(email)}</small></div>` : ''}
+                </div>
+            `;
+                authInfoDiv.classList.remove('d-none');
+            }
+        } else {
+            if (authInfoDiv) {
+                authInfoDiv.innerHTML = '';
+                authInfoDiv.classList.add('d-none');
+            }
+        }
+
         updateAuthButtonState();
     }
 
-    function resetTechnicianAuthentication() {
-        console.log('🔓 Resetting technician authentication');
-
-        isTechnicianAuthenticated = false;
-        authenticatedTechnician = null;
-        resetAuthUI();
-    }
-
-    async function loadTechnicians() {
-        console.log('👨‍🔧 Loading technicians from database...');
+    async function loadTechniciansForStockController() {
+        console.log('👨‍🔧 Loading technicians for stock controller selection...');
 
         try {
-            const response = await fetch('api/technicians/get_active.php');
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success && data.technicians) {
-                    populateTechnicianDropdown(data.technicians);
-                } else {
-                    useFallbackTechnicians();
+            const response = await fetch('api/technicians/get_all.php');
+            if (!response.ok) throw new Error('Failed to fetch technicians');
+
+            const data = await response.json();
+
+            if (data.success && data.technicians) {
+                // Also get stock controller info if returned
+                if (data.stock_controller) {
+                    console.log('📋 Stock Controller:', data.stock_controller);
+                    // Optionally store this for later use
+                    window.stockController = data.stock_controller;
                 }
+
+                populateTechnicianDropdownForStockController(data.technicians);
             } else {
-                throw new Error('Failed to fetch technicians');
+                console.warn('⚠️ No technicians data or API error:', data.message);
+                useFallbackTechnicians();
             }
         } catch (error) {
             console.error('❌ Error loading technicians:', error);
@@ -2297,21 +2450,37 @@ if (!file_exists($libraryPath)) {
         }
     }
 
-    function populateTechnicianDropdown(technicians) {
+    function populateTechnicianDropdownForStockController(technicians) {
         const select = document.getElementById('technicianSelect');
         if (!select) return;
 
         select.innerHTML = '<option value="">-- Select Technician --</option>';
 
+        // Sort technicians alphabetically
+        technicians.sort((a, b) => {
+            const nameA = (a.full_name || a.username).toUpperCase();
+            const nameB = (b.full_name || b.username).toUpperCase();
+            return nameA.localeCompare(nameB);
+        });
+
         technicians.forEach(tech => {
             const option = document.createElement('option');
             option.value = tech.id || tech.username;
-            option.textContent = tech.full_name || tech.username;
+
+            // Create display text with all relevant info
+            let displayText = tech.full_name || tech.username;
             if (tech.department) {
-                option.textContent += ` (${tech.department})`;
+                displayText += ` - ${tech.department}`;
             }
+            if (tech.position) {
+                displayText += ` (${tech.position})`;
+            }
+
+            option.textContent = displayText;
             option.setAttribute('data-username', tech.username);
             option.setAttribute('data-fullname', tech.full_name || tech.username);
+            option.setAttribute('data-department', tech.department || '');
+            option.setAttribute('data-email', tech.email || '');
             select.appendChild(option);
         });
 
@@ -2326,10 +2495,10 @@ if (!file_exists($libraryPath)) {
 
         select.innerHTML = `
             <option value="">-- Select Technician --</option>
-            <option value="kayonga_raul" data-username="kayonga_raul" data-fullname="Kayonga Raul">Kayonga Raul</option>
-            <option value="mudacumura_irene" data-username="mudacumura_irene" data-fullname="Mudacumura Irene">Mudacumura Irene</option>
-            <option value="hirwa_aubin" data-username="hirwa_aubin" data-fullname="Hirwa Aubin">Hirwa Aubin</option>
-            <option value="valentin" data-username="valentin" data-fullname="Valentin">Valentin</option>
+            <option value="1" data-username="kayonga_raul" data-fullname="Kayonga Raul" data-department="Technical Department" data-email="kayonga.raul@company.com">Kayonga Raul - Technical Department</option>
+            <option value="2" data-username="mudacumura_irene" data-fullname="Mudacumura Irene" data-department="Operations" data-email="mudacumura.irene@company.com">Mudacumura Irene - Operations</option>
+            <option value="3" data-username="hirwa_aubin" data-fullname="Hirwa Aubin" data-department="Logistics" data-email="hirwa.aubin@company.com">Hirwa Aubin - Logistics</option>
+            <option value="4" data-username="valentin" data-fullname="Valentin" data-department="Maintenance" data-email="valentin@company.com">Valentin - Maintenance</option>
         `;
         select.disabled = false;
     }
@@ -2363,7 +2532,7 @@ if (!file_exists($libraryPath)) {
         authBtn.disabled = !(technician && password);
     }
 
-    async function authenticateTechnician() {
+    async function authenticateTechnicianAsStockController() {
         const technicianSelect = document.getElementById('technicianSelect');
         const passwordInput = document.getElementById('technicianPassword');
         const authStatus = document.getElementById('authStatus');
@@ -2376,25 +2545,44 @@ if (!file_exists($libraryPath)) {
         const technicianId = technicianSelect.value;
         const password = passwordInput.value;
 
-        if (!technicianId || !password) {
-            showToast('error', 'Please select a technician and enter password');
+        if (!technicianId) {
+            showToast('error', 'Please select a technician');
+            return;
+        }
+
+        if (!password) {
+            showToast('error', 'Please enter the technician\'s password');
             return;
         }
 
         // Disable button during authentication
         const authBtn = document.getElementById('authenticateBtn');
         if (authBtn) {
-            authBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Authenticating...';
+            authBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Verifying...';
             authBtn.disabled = true;
         }
 
         try {
-            const success = await performAuthentication(technicianId, password);
+            // Call API to verify technician password
+            const response = await fetch('api/technicians/verify_password.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    technician_id: technicianId,
+                    password: password
+                })
+            });
 
-            if (success) {
-                handleSuccessfulAuthentication();
+            if (!response.ok) throw new Error('Server error');
+
+            const data = await response.json();
+
+            if (data.success && data.technician) {
+                handleSuccessfulAuthentication(data.technician);
             } else {
-                handleFailedAuthentication();
+                handleFailedAuthentication(data.message || 'Invalid password. Please try again.');
             }
 
         } catch (error) {
@@ -2405,83 +2593,112 @@ if (!file_exists($libraryPath)) {
         }
     }
 
-    async function performAuthentication(technicianId, password) {
-        const response = await fetch('api/technicians/authenticate.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                technician_id: technicianId,
-                password: password
-            })
-        });
-
-        if (!response.ok) throw new Error('Server error');
-
-        const data = await response.json();
-        return data.success;
-    }
-
-    function handleSuccessfulAuthentication() {
-        const selectedOption = document.querySelector('#technicianSelect option:checked');
+    function handleSuccessfulAuthentication(technicianData) {
         authenticatedTechnician = {
-            id: selectedOption.value,
-            username: selectedOption.dataset.username,
-            full_name: selectedOption.dataset.fullname,
-            department: 'Demo Department'
+            id: technicianData.id,
+            username: technicianData.username,
+            full_name: technicianData.full_name,
+            department: technicianData.department || 'Not specified',
+            email: technicianData.email || '',
+            // Store the verification timestamp
+            verified_at: new Date().toISOString()
         };
 
-        document.getElementById('authStatus').innerHTML =
-            '<span class="text-success"><i class="fas fa-check-circle me-1"></i>Authentication successful</span>';
+        // ADD THIS: Save to sessionStorage for persistence
+        sessionStorage.setItem('authenticatedTechnician', JSON.stringify(authenticatedTechnician));
+        console.log('💾 Technician saved to sessionStorage:', authenticatedTechnician);
 
-        showAuthSuccessUI();
-        showToast('success', 'Technician authenticated successfully!');
+        document.getElementById('authStatus').innerHTML =
+            '<div class="alert alert-success alert-sm mt-2 mb-0">' +
+            '<i class="fas fa-check-circle me-1"></i> ' +
+            'Technician verified successfully. Password is correct.' +
+            '</div>';
+
+        // Update confirmation section
+        document.getElementById('confirmationTechnicianName').textContent = authenticatedTechnician.full_name;
+
+        // Enable submission buttons
+        document.getElementById('printPreviewBtn').disabled = false;
+        document.getElementById('confirmBatchSubmit').disabled = false;
+
+        // Show success section
+        document.getElementById('authSuccessSection').classList.remove('d-none');
+
+        // Fill the "requestedBy" field (readonly, auto-filled)
+        const requestedByField = document.getElementById('requestedBy');
+        if (requestedByField) {
+            requestedByField.value = authenticatedTechnician.full_name;
+            requestedByField.setAttribute('readonly', 'readonly');
+            requestedByField.classList.add('bg-light');
+        }
+
+        // Auto-check confirmation if all items are ready
+        const confirmCheckbox = document.getElementById('confirmBatchSubmit');
+        if (confirmCheckbox && !confirmCheckbox.checked) {
+            confirmCheckbox.checked = true;
+            confirmCheckbox.dispatchEvent(new Event('change'));
+        }
+
+        isTechnicianAuthenticated = true;
+        showToast('success', `Verified: ${authenticatedTechnician.full_name} is authenticated`);
     }
 
-    function handleFailedAuthentication() {
+    function handleFailedAuthentication(message) {
         isTechnicianAuthenticated = false;
         authenticatedTechnician = null;
+
         document.getElementById('authStatus').innerHTML =
-            '<span class="text-danger"><i class="fas fa-times-circle me-1"></i>Authentication failed - Invalid password</span>';
-        showToast('error', 'Authentication failed. Please check the password and try again.');
-    }
+            '<div class="alert alert-danger alert-sm mt-2 mb-0">' +
+            '<i class="fas fa-times-circle me-1"></i> ' +
+            escapeHtml(message) +
+            '</div>';
 
-    function showAuthSuccessUI() {
-        isTechnicianAuthenticated = true;
-        document.getElementById('authSuccessSection').classList.remove('d-none');
-        document.getElementById('authenticatedTechnicianName').textContent = authenticatedTechnician.full_name;
-        document.getElementById('requestedBy').value = authenticatedTechnician.full_name;
-        document.getElementById('confirmationTechnicianName').textContent = authenticatedTechnician.full_name;
-        document.getElementById('printPreviewBtn').disabled = false;
-    }
+        // Disable submission buttons
+        document.getElementById('printPreviewBtn').disabled = true;
+        document.getElementById('confirmBatchSubmit').disabled = true;
+        document.getElementById('submitBatchBtn').disabled = true;
 
-    function resetAuthButton(authBtn) {
-        if (authBtn) {
-            authBtn.innerHTML = '<i class="fas fa-fingerprint me-1"></i> Authenticate Technician';
-            authBtn.disabled = false;
-        }
+        // Hide success section
+        document.getElementById('authSuccessSection').classList.add('d-none');
+
+        showToast('error', 'Authentication failed');
     }
 
     function demoAuthenticateTechnician(technicianId, password, authStatus) {
-        console.log('⚠️ Using demo authentication');
+        console.log('⚠️ Using demo authentication mode');
 
         const demoTechnicians = {
-            'kayonga_raul': {
+            '1': {
+                id: 1,
+                username: 'kayonga_raul',
                 full_name: 'Kayonga Raul',
-                password: 'raul123'
+                password: 'raul123',
+                department: 'Technical Department',
+                email: 'kayonga.raul@company.com'
             },
-            'mudacumura_irene': {
+            '2': {
+                id: 2,
+                username: 'mudacumura_irene',
                 full_name: 'Mudacumura Irene',
-                password: 'irene123'
+                password: 'irene123',
+                department: 'Operations',
+                email: 'mudacumura.irene@company.com'
             },
-            'hirwa_aubin': {
+            '3': {
+                id: 3,
+                username: 'hirwa_aubin',
                 full_name: 'Hirwa Aubin',
-                password: 'aubin123'
+                password: 'aubin123',
+                department: 'Logistics',
+                email: 'hirwa.aubin@company.com'
             },
-            'valentin': {
+            '4': {
+                id: 4,
+                username: 'valentin',
                 full_name: 'Valentin',
-                password: 'val123'
+                password: 'val123',
+                department: 'Maintenance',
+                email: 'valentin@company.com'
             }
         };
 
@@ -2489,20 +2706,62 @@ if (!file_exists($libraryPath)) {
 
         if (technician && password === technician.password) {
             authenticatedTechnician = {
-                id: technicianId,
-                username: technicianId,
+                id: technician.id,
+                username: technician.username,
                 full_name: technician.full_name,
-                department: 'Demo Department'
+                department: technician.department,
+                email: technician.email,
+                verified_at: new Date().toISOString()
             };
 
             authStatus.innerHTML =
-                '<span class="text-success"><i class="fas fa-check-circle me-1"></i>Authentication successful (Demo Mode)</span>';
+                '<div class="alert alert-success alert-sm mt-2 mb-0">' +
+                '<i class="fas fa-check-circle me-1"></i> ' +
+                'Technician verified successfully (Demo Mode)' +
+                '</div>';
 
-            showAuthSuccessUI();
-            showToast('success', 'Technician authenticated in demo mode!');
+            document.getElementById('confirmationTechnicianName').textContent = authenticatedTechnician.full_name;
+            document.getElementById('printPreviewBtn').disabled = false;
+            document.getElementById('confirmBatchSubmit').disabled = false;
+            document.getElementById('authSuccessSection').classList.remove('d-none');
+
+            // Fill the "requestedBy" field (readonly)
+            const requestedByField = document.getElementById('requestedBy');
+            if (requestedByField) {
+                requestedByField.value = authenticatedTechnician.full_name;
+                requestedByField.setAttribute('readonly', 'readonly');
+                requestedByField.classList.add('bg-light');
+            }
+
+            isTechnicianAuthenticated = true;
+            showToast('success', `Demo: ${authenticatedTechnician.full_name} verified`);
         } else {
-            handleFailedAuthentication();
+            handleFailedAuthentication('Invalid password in demo mode');
         }
+    }
+
+    function resetAuthButton(authBtn) {
+        if (authBtn) {
+            authBtn.innerHTML = '<i class="fas fa-user-check me-1"></i> Verify Technician';
+            authBtn.disabled = false;
+        }
+    }
+
+    function resetTechnicianAuthentication() {
+        console.log('🔓 Resetting technician authentication');
+
+        // DEBUG: Log before reset
+        console.log('❌ Technician before reset:', authenticatedTechnician);
+
+        isTechnicianAuthenticated = false;
+        authenticatedTechnician = null;
+
+        // Clear sessionStorage when explicitly resetting
+        sessionStorage.removeItem('authenticatedTechnician');
+
+        resetAuthUI();
+
+        console.log('❌ Technician after reset:', authenticatedTechnician);
     }
 
     // ==================== BATCH MODAL FUNCTIONS ====================
@@ -2624,7 +2883,7 @@ if (!file_exists($libraryPath)) {
         }
 
         console.log('🖨️ Opening print preview...');
-        const stockController = "<?php echo htmlspecialchars($_SESSION['username'] ?? 'Stock Controller'); ?>";
+        const stockController = "<?php echo htmlspecialchars($_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Stock Controller'); ?>";
         const printContent = createPrintContent(stockController);
 
         const printWindow = window.open('', '_blank');
@@ -2782,13 +3041,13 @@ if (!file_exists($libraryPath)) {
     // ==================== BATCH SUBMISSION FUNCTIONS ====================
     function submitBatchToServer() {
         if (!isTechnicianAuthenticated) {
-            showToast('error', 'Technician authentication required');
+            showToast('error', 'Please verify technician identity first');
             return;
         }
 
         const confirmCheckbox = document.getElementById('confirmBatchSubmit');
         if (!confirmCheckbox || !confirmCheckbox.checked) {
-            showToast('error', 'Please confirm the submission by checking the confirmation box');
+            showToast('error', 'Please confirm that you have verified the technician');
             return;
         }
 
@@ -2799,19 +3058,72 @@ if (!file_exists($libraryPath)) {
         }
 
         const batchData = collectBatchData();
-        console.log('Submitting batch:', batchData);
+        console.log('Submitting batch with verified technician:', batchData);
 
-        // Simulate API call
-        setTimeout(() => {
-            handleBatchSubmissionSuccess();
-        }, 1500);
+        // Submit to API
+        fetch('api/batch/submit.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(batchData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    handleBatchSubmissionSuccess();
+                } else {
+                    handleBatchSubmissionError(data.message || 'Submission failed');
+                }
+            })
+            .catch(error => {
+                handleBatchSubmissionError(error.message);
+            });
     }
 
     function collectBatchData() {
+        const stockControllerName = "<?php echo htmlspecialchars($_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Stock Controller'); ?>";
+        const stockControllerUsername = "<?php echo htmlspecialchars($_SESSION['username'] ?? 'Stock Controller'); ?>";
+
+        // DEBUG: Check technician data
+        console.log('🔍 DEBUG collectBatchData():');
+        console.log('- authenticatedTechnician:', authenticatedTechnician);
+        console.log('- Is authenticatedTechnician null?', authenticatedTechnician === null);
+        console.log('- Technician full_name:', authenticatedTechnician?.full_name);
+        console.log('- Technician ID:', authenticatedTechnician?.id);
+
+        // If authenticatedTechnician is null but we have it in sessionStorage, try to restore
+        if (!authenticatedTechnician) {
+            const savedTech = sessionStorage.getItem('authenticatedTechnician');
+            if (savedTech) {
+                authenticatedTechnician = JSON.parse(savedTech);
+                isTechnicianAuthenticated = true;
+                console.log('🔄 Restored technician from sessionStorage in collectBatchData():', authenticatedTechnician);
+            }
+        }
+
+        // Final check - if still null, show error
+        if (!authenticatedTechnician) {
+            console.error('❌ CRITICAL: No technician data available for submission!');
+            showToast('error', 'Technician authentication lost. Please re-authenticate.');
+            throw new Error('No technician authentication data');
+        }
+
         return {
             technician: authenticatedTechnician,
-            stockController: "<?php echo htmlspecialchars($_SESSION['username'] ?? 'Stock Controller'); ?>",
-            items: batchItems,
+            stock_controller: {
+                id: "<?php echo $_SESSION['user_id'] ?? 0; ?>",
+                username: stockControllerUsername,
+                full_name: stockControllerName
+            },
+            items: batchItems.map(item => ({
+                id: item.id,
+                name: item.name || item.item_name,
+                serial_number: item.serial_number,
+                status: item.status,
+                quantity: item.quantity || 1,
+                category: item.category
+            })),
             jobDetails: {
                 stockLocation: document.getElementById('stockLocation').value,
                 eventName: document.getElementById('eventName').value,
@@ -2822,23 +3134,53 @@ if (!file_exists($libraryPath)) {
                 batchAction: document.getElementById('batchAction').value,
                 batchLocation: document.getElementById('batchLocation').value,
                 batchNotes: document.getElementById('batchNotes').value,
-                approvalNotes: document.getElementById('approvalNotes').value
+                approvalNotes: document.getElementById('approvalNotes').value,
+                // Auto-filled fields (readonly)
+                requestedBy: document.getElementById('requestedBy').value,
+                submittedBy: document.getElementById('submittedBy').value
+            },
+            authentication: {
+                verified_by: stockControllerUsername,
+                verification_time: new Date().toISOString(),
+                verification_method: 'password_verification'
             },
             timestamp: new Date().toISOString(),
-            batchId: 'BATCH-' + Date.now().toString().slice(-6) + '-' + Math.random().toString(36).substr(2, 9)
+            batchId: 'BATCH-' + Date.now().toString().slice(-6)
         };
     }
 
     function handleBatchSubmissionSuccess() {
+        console.log('✅ Batch submission successful!');
         showToast('success', 'Batch submitted successfully!');
-        resetBatchModal();
 
+        // Clear sessionStorage after successful submission
+        sessionStorage.removeItem('authenticatedTechnician');
+        console.log('🧹 Cleared technician from sessionStorage');
+
+        // Close modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('batchSubmitModal'));
-        if (modal) modal.hide();
+        if (modal) {
+            modal.hide();
+        }
 
+        // Reset batch
         batchItems = [];
         updateBatchUI();
         saveBatchToStorage();
+
+        // Reset authentication AFTER modal is closed
+        setTimeout(() => {
+            resetTechnicianAuthentication();
+        }, 500);
+    }
+
+    function handleBatchSubmissionError(errorMessage) {
+        showToast('error', errorMessage);
+        const submitBtn = document.getElementById('submitBatchBtn');
+        if (submitBtn) {
+            submitBtn.innerHTML = '<i class="fas fa-paper-plane me-1"></i> Submit Batch';
+            submitBtn.disabled = false;
+        }
     }
 
     function resetBatchModal() {
@@ -2868,7 +3210,7 @@ if (!file_exists($libraryPath)) {
         // Reset form fields
         const resetFields = ['stockLocation', 'eventName', 'jobSheet', 'projectManager',
             'vehicleNumber', 'driverName', 'batchAction', 'batchLocation',
-            'batchNotes', 'approvalNotes'
+            'batchNotes', 'approvalNotes', 'requestedBy'
         ];
         resetFields.forEach(field => {
             const element = document.getElementById(field);
@@ -2876,10 +3218,13 @@ if (!file_exists($libraryPath)) {
                 if (element.tagName === 'SELECT') {
                     element.selectedIndex = 0;
                 } else {
-                    element.value = element.defaultValue || '';
+                    element.value = '';
                 }
             }
         });
+
+        // Reset submittedBy field
+        setStockControllerName();
     }
 
     // ==================== UTILITY FUNCTIONS ====================

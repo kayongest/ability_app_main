@@ -11,26 +11,71 @@ define('BASE_URL', 'http://' . $_SERVER['HTTP_HOST'] . '/ability_app-master/');
 // Define absolute path
 define('ABSPATH', dirname(__DIR__) . DIRECTORY_SEPARATOR);
 
-// Include required files
-require_once 'database_fix.php';
-require_once 'functions.php';
-
 // Start session if not already started
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Only define these functions if they don't already exist
+// Include required files
+require_once 'database_fix.php';
+require_once 'functions.php';
+
+// ================== SIMPLE SESSION-BASED ROLE FUNCTIONS ==================
+// These functions work without database connection
+
+// Check if user is logged in
 if (!function_exists('isLoggedIn')) {
     function isLoggedIn()
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
         return isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
     }
 }
 
+// Check if user is admin (from session)
+if (!function_exists('isAdmin')) {
+    function isAdmin()
+    {
+        return isLoggedIn() && isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin';
+    }
+}
+
+// Check if user has specific role (from session)
+if (!function_exists('userHasRole')) {
+    function userHasRole($role)
+    {
+        return isLoggedIn() && isset($_SESSION['user_role']) && $_SESSION['user_role'] === $role;
+    }
+}
+
+// Get current user role
+if (!function_exists('getCurrentUserRole')) {
+    function getCurrentUserRole()
+    {
+        if (!isLoggedIn()) {
+            return 'guest';
+        }
+        return $_SESSION['user_role'] ?? 'user';
+    }
+}
+
+// Check if user is stock controller
+if (!function_exists('isStockController')) {
+    function isStockController()
+    {
+        return userHasRole('stock_controller');
+    }
+}
+
+// Check if user is technician
+if (!function_exists('isTechnician')) {
+    function isTechnician()
+    {
+        return userHasRole('technician');
+    }
+}
+// ================== END ROLE FUNCTIONS ==================
+
+// Only define these functions if they don't already exist
 if (!function_exists('redirect')) {
     function redirect($url, $statusCode = 303)
     {
@@ -126,8 +171,8 @@ if (!function_exists('formatDate')) {
 if (!function_exists('isAjaxRequest')) {
     function isAjaxRequest()
     {
-        return isset($_SERVER['HTTP_X_REQUESTED_WITH']) && 
-               strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+        return isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+            strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
     }
 }
 
@@ -220,26 +265,26 @@ if (!function_exists('generateSlug')) {
     {
         // Replace non-letter or digits by -
         $text = preg_replace('~[^\pL\d]+~u', '-', $text);
-        
+
         // Transliterate
         $text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
-        
+
         // Remove unwanted characters
         $text = preg_replace('~[^-\w]+~', '', $text);
-        
+
         // Trim
         $text = trim($text, '-');
-        
+
         // Remove duplicate -
         $text = preg_replace('~-+~', '-', $text);
-        
+
         // Lowercase
         $text = strtolower($text);
-        
+
         if (empty($text)) {
             return 'n-a';
         }
-        
+
         return $text;
     }
 }
@@ -256,4 +301,3 @@ if (!function_exists('debug')) {
         }
     }
 }
-?>

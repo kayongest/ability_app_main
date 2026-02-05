@@ -1,55 +1,128 @@
 <?php
-// check_tables.php
-require_once 'includes/db_connect.php';
+// create_tables.php
+require_once 'config/database.php';
 
-$db = getDatabase();
-$conn = $db->getConnection();
+$conn = getConnection();
 
-echo "<h2>Checking Database Tables</h2>";
+echo "<h1>Creating Database Tables</h1>";
 
-// List all tables in the database
-$result = $conn->query("SHOW TABLES");
-echo "<h3>All Tables in Database:</h3>";
-echo "<ul>";
-while ($row = $result->fetch_array()) {
-    echo "<li>" . $row[0] . "</li>";
-}
-echo "</ul>";
-
-// Check if specific tables exist
-$tables = ['items', 'scans', 'users'];
-
-foreach ($tables as $table) {
-    echo "<h3>Checking '$table' table:</h3>";
+$sql_queries = [
+    // Users table
+    "CREATE TABLE IF NOT EXISTS users (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        username VARCHAR(50) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        full_name VARCHAR(100),
+        email VARCHAR(100),
+        department VARCHAR(100),
+        role ENUM('admin', 'stock_controller', 'technician') DEFAULT 'technician',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
     
-    $result = $conn->query("SHOW TABLES LIKE '$table'");
-    if ($result->num_rows > 0) {
-        echo "✓ Table '$table' exists<br>";
-        
-        // Show table structure
-        $descResult = $conn->query("DESCRIBE $table");
-        if ($descResult) {
-            echo "Table structure:<br>";
-            echo "<table border='1' cellpadding='5'>";
-            echo "<tr><th>Field</th><th>Type</th><th>Null</th><th>Key</th><th>Default</th><th>Extra</th></tr>";
-            while ($row = $descResult->fetch_assoc()) {
-                echo "<tr>";
-                echo "<td>" . htmlspecialchars($row['Field']) . "</td>";
-                echo "<td>" . htmlspecialchars($row['Type']) . "</td>";
-                echo "<td>" . htmlspecialchars($row['Null']) . "</td>";
-                echo "<td>" . htmlspecialchars($row['Key']) . "</td>";
-                echo "<td>" . htmlspecialchars($row['Default']) . "</td>";
-                echo "<td>" . htmlspecialchars($row['Extra']) . "</td>";
-                echo "</tr>";
-            }
-            echo "</table>";
-        } else {
-            echo "✗ Error describing table: " . $conn->error . "<br>";
-        }
+    // Batches table
+    "CREATE TABLE IF NOT EXISTS batches (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        batch_id VARCHAR(50) UNIQUE NOT NULL,
+        batch_name VARCHAR(255),
+        requested_by INT,
+        submitted_by INT,
+        approved_by INT,
+        submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        approved_at DATETIME,
+        approval_status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+        job_sheet_number VARCHAR(50),
+        location_applied VARCHAR(100),
+        project_manager VARCHAR(100),
+        vehicle_number VARCHAR(50),
+        driver_name VARCHAR(100),
+        destination VARCHAR(100),
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (requested_by) REFERENCES users(id) ON DELETE SET NULL,
+        FOREIGN KEY (submitted_by) REFERENCES users(id) ON DELETE SET NULL,
+        FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+    
+    // Items table
+    "CREATE TABLE IF NOT EXISTS items (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        name VARCHAR(255) NOT NULL,
+        serial_number VARCHAR(100) UNIQUE,
+        category VARCHAR(100),
+        status ENUM('available', 'in_use', 'maintenance') DEFAULT 'available',
+        stock_location VARCHAR(100),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+    
+    // Batch items table
+    "CREATE TABLE IF NOT EXISTS batch_items (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        batch_id INT NOT NULL,
+        item_id INT NOT NULL,
+        quantity INT DEFAULT 1,
+        status ENUM('available', 'in_use', 'maintenance') DEFAULT 'available',
+        destination VARCHAR(100),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (batch_id) REFERENCES batches(id) ON DELETE CASCADE,
+        FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+];
+
+foreach ($sql_queries as $sql) {
+    echo "<h3>Executing:</h3>";
+    echo "<pre>" . htmlspecialchars($sql) . "</pre>";
+    
+    if ($conn->query($sql) === TRUE) {
+        echo "<p style='color: green;'>✓ Success</p>";
     } else {
-        echo "✗ Table '$table' does NOT exist<br>";
+        echo "<p style='color: red;'>✗ Error: " . $conn->error . "</p>";
     }
     echo "<hr>";
+}
+
+// Add some test data if tables are empty
+echo "<h2>Adding test data if tables are empty:</h2>";
+
+// Check if users table is empty
+$result = $conn->query("SELECT COUNT(*) as count FROM users");
+$row = $result->fetch_assoc();
+if ($row['count'] == 0) {
+    // Add test users
+    $test_users = [
+        "('admin', '" . password_hash('admin123', PASSWORD_DEFAULT) . "', 'Administrator', 'admin@company.com', 'IT', 'admin')",
+        "('kayongest', '" . password_hash('password123', PASSWORD_DEFAULT) . "', 'Kayonga Ernest', 'kayonga@company.com', 'Stock Control', 'stock_controller')",
+        "('raul_tech', '" . password_hash('raul123', PASSWORD_DEFAULT) . "', 'Kayonga Raul', 'raul@company.com', 'Technical Department', 'technician')",
+        "('irene_ops', '" . password_hash('irene123', PASSWORD_DEFAULT) . "', 'Mudacumura Irene', 'irene@company.com', 'Operations', 'technician')"
+    ];
+    
+    $sql = "INSERT INTO users (username, password, full_name, email, department, role) VALUES " . implode(', ', $test_users);
+    if ($conn->query($sql)) {
+        echo "<p style='color: green;'>✓ Added test users</p>";
+    } else {
+        echo "<p style='color: red;'>✗ Error adding users: " . $conn->error . "</p>";
+    }
+}
+
+// Check if items table is empty
+$result = $conn->query("SELECT COUNT(*) as count FROM items");
+$row = $result->fetch_assoc();
+if ($row['count'] == 0) {
+    // Add test items
+    $test_items = [
+        "('Laptop Dell XPS 15', 'DLXPS15-001', 'Electronics', 'available', 'IT Department')",
+        "('24\" Monitor', 'MON-24-001', 'Electronics', 'available', 'IT Department')",
+        "('Wireless Keyboard', 'KB-WIRE-001', 'Electronics', 'available', 'IT Department')",
+        "('Office Chair', 'OC-ERG-001', 'Furniture', 'available', 'Warehouse B')",
+        "('Power Drill', 'PD-2024-001', 'Tools', 'in_use', 'Construction Site')"
+    ];
+    
+    $sql = "INSERT INTO items (name, serial_number, category, status, stock_location) VALUES " . implode(', ', $test_items);
+    if ($conn->query($sql)) {
+        echo "<p style='color: green;'>✓ Added test items</p>";
+    } else {
+        echo "<p style='color: red;'>✗ Error adding items: " . $conn->error . "</p>";
+    }
 }
 
 $conn->close();

@@ -155,6 +155,12 @@ if (!defined('BASE_URL')) {
                             <i class="fas fa-chart-bar me-1"></i> Reports
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo ($current_page == 'batch_history.php') ? 'active' : ''; ?>"
+                            href="<?php echo BASE_URL; ?>batch_history.php">
+                            <i class="fas fa-chart-bar me-1"></i> Batch History
+                        </a>
+                    </li>
                     <!-- User Management (Admin only) -->
                     <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
                         <li class="nav-item">

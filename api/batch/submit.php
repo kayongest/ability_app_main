@@ -1,5 +1,5 @@
 <?php
-// api/batch/submit.php
+// api/batch/submit.php - UPDATED VERSION
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
@@ -23,7 +23,7 @@ if (!isset($_SESSION['user_id'])) {
 $rootPath = dirname(dirname(dirname(__FILE__)));
 
 // Include required files
-require_once $rootPath . '/includes/database_fix.php';  // ADD THIS LINE
+require_once $rootPath . '/includes/database_fix.php';
 require_once $rootPath . '/includes/db_connect.php';
 require_once $rootPath . '/includes/functions.php';
 
@@ -53,6 +53,49 @@ try {
     $userId = $_SESSION['user_id'];
     $userName = $_SESSION['username'] ?? 'Unknown User';
 
+    // ==================== GET TECHNICIAN ID ====================
+    // Check if technician data is provided
+    $technicianId = null;
+
+    if (isset($input['technician']) && isset($input['technician']['id'])) {
+        $technicianId = $input['technician']['id'];
+        error_log("✅ Technician ID from input: " . $technicianId);
+    } elseif (isset($input['jobDetails']) && isset($input['jobDetails']['requestedBy'])) {
+        // Try to parse from jobDetails
+        $requestedBy = $input['jobDetails']['requestedBy'];
+        if (is_numeric($requestedBy)) {
+            $technicianId = $requestedBy;
+        }
+        error_log("✅ Technician ID from jobDetails: " . $technicianId);
+    } else {
+        error_log("⚠️ No technician ID found in submission data");
+    }
+
+    // If still no technician ID, use the current user as fallback
+    if (!$technicianId) {
+        $technicianId = $userId;
+        error_log("⚠️ Using current user as technician fallback: " . $technicianId);
+    }
+
+    // Validate technician exists in users table
+    if ($technicianId) {
+        $checkStmt = $conn->prepare("SELECT id, username FROM users WHERE id = ?");
+        $checkStmt->bind_param("i", $technicianId);
+        $checkStmt->execute();
+        $result = $checkStmt->get_result();
+
+        if ($result->num_rows === 0) {
+            error_log("❌ Technician ID $technicianId not found in users table");
+            // Use current user instead
+            $technicianId = $userId;
+        } else {
+            $technician = $result->fetch_assoc();
+            error_log("✅ Technician validated: " . $technician['username'] . " (ID: " . $technician['id'] . ")");
+        }
+        $checkStmt->close();
+    }
+    // ==================== END GET TECHNICIAN ID ====================
+
     // Generate batch ID
     $batchId = 'BATCH-' . date('YmdHis') . '-' . bin2hex(random_bytes(4));
     $batchName = isset($input['notes']) && !empty($input['notes'])
@@ -62,6 +105,13 @@ try {
     $actionApplied = $input['action'] ?? null;
     $locationApplied = $input['location'] ?? null;
     $batchNotes = $input['notes'] ?? null;
+
+    // Get job details if available
+    $jobSheet = $input['jobDetails']['jobSheet'] ?? null;
+    $projectManager = $input['jobDetails']['projectManager'] ?? null;
+    $vehicleNumber = $input['jobDetails']['vehicleNumber'] ?? null;
+    $driverName = $input['jobDetails']['driverName'] ?? null;
+    $destination = $input['jobDetails']['batchLocation'] ?? null;
 
     // Calculate statistics
     $totalItems = 0;
@@ -98,12 +148,13 @@ try {
     // Check if batch_scans table exists, create if not
     checkAndCreateTables($conn);
 
-    // 1. Insert batch header
+    // ==================== 1. Insert batch header WITH requested_by ====================
     $batchStmt = $conn->prepare("
         INSERT INTO batch_scans (
-            batch_id, batch_name, total_items, unique_items, submitted_by,
+            batch_id, batch_name, total_items, unique_items, 
+            submitted_by, requested_by,  -- Added requested_by here
             action_applied, location_applied, notes, status, submitted_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'completed', NOW())
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'completed', NOW())
     ");
 
     if (!$batchStmt) {
@@ -111,12 +162,13 @@ try {
     }
 
     $batchStmt->bind_param(
-        "ssiiisss",
+        "ssiiiiisss",  // Changed from "ssiiisss" to "ssiiiiisss"
         $batchId,
         $batchName,
         $totalItems,
         $uniqueItems,
-        $userId,
+        $userId,        // submitted_by (stock controller)
+        $technicianId,  // requested_by (technician) - THIS IS NEW!
         $actionApplied,
         $locationApplied,
         $batchNotes
@@ -127,7 +179,10 @@ try {
     }
     $batchStmt->close();
 
-    // 2. Insert batch items
+    // Log the insertion
+    error_log("✅ Batch inserted with submitted_by=$userId, requested_by=$technicianId");
+
+    // 2. Insert batch items (unchanged)
     $itemStmt = $conn->prepare("
         INSERT INTO batch_items (
             batch_id, item_id, item_name, serial_number, category,
@@ -202,13 +257,12 @@ try {
         );
 
         if (!$statsStmt->execute()) {
-            // Don't throw error, just log it
             error_log("Failed to save statistics: " . $statsStmt->error);
         }
         $statsStmt->close();
     }
 
-    // 5. Log batch action (if table exists)
+    // 5. Log batch action
     $actionStmt = $conn->prepare("
         INSERT INTO batch_actions_log (
             batch_id, user_id, action_type, action_details,
@@ -222,7 +276,9 @@ try {
             'total_items' => $totalItems,
             'unique_items' => $uniqueItems,
             'action_applied' => $actionApplied,
-            'location_applied' => $locationApplied
+            'location_applied' => $locationApplied,
+            'technician_id' => $technicianId,  // Log technician ID
+            'submitted_by' => $userId
         ]);
         $ipAddress = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
@@ -238,7 +294,6 @@ try {
         );
 
         if (!$actionStmt->execute()) {
-            // Don't throw error, just log it
             error_log("Failed to log action: " . $actionStmt->error);
         }
         $actionStmt->close();
@@ -247,7 +302,7 @@ try {
     // Commit transaction
     $conn->commit();
 
-    // Clear localStorage data (send instruction to frontend)
+    // Clear localStorage data
     $response = [
         'success' => true,
         'message' => 'Batch submitted successfully!',
@@ -256,10 +311,15 @@ try {
         'total_items' => $totalItems,
         'unique_items' => $uniqueItems,
         'clear_storage' => true,
-        'processed_items' => count($input['items'])
+        'processed_items' => count($input['items']),
+        'technician_saved' => $technicianId ? 'yes' : 'no',
+        'technician_id' => $technicianId
     ];
 
     echo json_encode($response);
+
+    // Log success
+    error_log("✅ Batch $batchId submitted successfully with technician ID: $technicianId");
 } catch (Exception $e) {
     // Rollback transaction on error
     if (isset($conn)) {
@@ -271,74 +331,15 @@ try {
         'success' => false,
         'message' => 'Error submitting batch: ' . $e->getMessage()
     ]);
-    
-    // Log error
-    error_log("Batch submission error: " . $e->getMessage());
+
+    error_log("❌ Batch submission error: " . $e->getMessage());
 } finally {
     if (isset($conn)) {
         $conn->close();
     }
 }
 
-/**
- * Get new status based on batch action
- */
-function getStatusFromAction($action)
-{
-    $statusMap = [
-        'check_in' => 'available',
-        'check_out' => 'in_use',
-        'maintenance' => 'maintenance',
-        'available' => 'available'
-    ];
-
-    return $statusMap[$action] ?? 'available';
-}
-
-/**
- * Update equipment status in main items table
- */
-function updateEquipmentStatus($conn, $itemId, $newStatus, $newLocation, $userId)
-{
-    try {
-        // Check if items table exists
-        $checkStmt = $conn->prepare("SHOW TABLES LIKE 'items'");
-        
-        if ($checkStmt->execute()) {
-            $result = $checkStmt->get_result();
-            if ($result->num_rows > 0) {
-                // Update items table if it exists
-                $updateStmt = $conn->prepare("
-                    UPDATE items 
-                    SET status = ?, 
-                        stock_location = ?,
-                        updated_at = NOW(),
-                        updated_by = ?
-                    WHERE id = ? OR item_id = ?
-                ");
-
-                if ($updateStmt) {
-                    $updateStmt->bind_param(
-                        "ssiii",
-                        $newStatus,
-                        $newLocation,
-                        $userId,
-                        $itemId,
-                        $itemId
-                    );
-
-                    $updateStmt->execute();
-                    $updateStmt->close();
-                }
-            }
-        }
-        $checkStmt->close();
-    } catch (Exception $e) {
-        // Silently fail - not critical
-        error_log("updateEquipmentStatus error: " . $e->getMessage());
-    }
-}
-
+// ==================== ALSO UPDATE THE checkAndCreateTables FUNCTION ====================
 /**
  * Check and create necessary tables if they don't exist
  */
@@ -352,6 +353,7 @@ function checkAndCreateTables($conn)
             total_items INT DEFAULT 0,
             unique_items INT DEFAULT 0,
             submitted_by INT,
+            requested_by INT,  -- Make sure this column exists!
             action_applied VARCHAR(50),
             location_applied VARCHAR(255),
             notes TEXT,
@@ -359,9 +361,10 @@ function checkAndCreateTables($conn)
             submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             INDEX idx_batch_id (batch_id),
             INDEX idx_submitted_at (submitted_at),
-            INDEX idx_submitted_by (submitted_by)
+            INDEX idx_submitted_by (submitted_by),
+            INDEX idx_requested_by (requested_by)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
-        
+
         "CREATE TABLE IF NOT EXISTS batch_items (
             id INT AUTO_INCREMENT PRIMARY KEY,
             batch_id VARCHAR(50) NOT NULL,
@@ -381,7 +384,7 @@ function checkAndCreateTables($conn)
             INDEX idx_serial (serial_number),
             FOREIGN KEY (batch_id) REFERENCES batch_scans(batch_id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
-        
+
         "CREATE TABLE IF NOT EXISTS batch_statistics (
             id INT AUTO_INCREMENT PRIMARY KEY,
             batch_id VARCHAR(50) UNIQUE NOT NULL,
@@ -401,5 +404,52 @@ function checkAndCreateTables($conn)
         } catch (Exception $e) {
             error_log("Table creation error: " . $e->getMessage());
         }
+    }
+}
+
+// Keep other functions unchanged
+function getStatusFromAction($action)
+{
+    $statusMap = [
+        'check_in' => 'available',
+        'check_out' => 'in_use',
+        'maintenance' => 'maintenance',
+        'available' => 'available'
+    ];
+    return $statusMap[$action] ?? 'available';
+}
+
+function updateEquipmentStatus($conn, $itemId, $newStatus, $newLocation, $userId)
+{
+    try {
+        $checkStmt = $conn->prepare("SHOW TABLES LIKE 'items'");
+        if ($checkStmt->execute()) {
+            $result = $checkStmt->get_result();
+            if ($result->num_rows > 0) {
+                $updateStmt = $conn->prepare("
+                    UPDATE items 
+                    SET status = ?, 
+                        stock_location = ?,
+                        updated_at = NOW(),
+                        updated_by = ?
+                    WHERE id = ? OR item_id = ?
+                ");
+                if ($updateStmt) {
+                    $updateStmt->bind_param(
+                        "ssiii",
+                        $newStatus,
+                        $newLocation,
+                        $userId,
+                        $itemId,
+                        $itemId
+                    );
+                    $updateStmt->execute();
+                    $updateStmt->close();
+                }
+            }
+        }
+        $checkStmt->close();
+    } catch (Exception $e) {
+        error_log("updateEquipmentStatus error: " . $e->getMessage());
     }
 }
