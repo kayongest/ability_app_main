@@ -53,48 +53,41 @@ try {
     $userId = $_SESSION['user_id'];
     $userName = $_SESSION['username'] ?? 'Unknown User';
 
-    // ==================== GET TECHNICIAN ID ====================
-    // Check if technician data is provided
+    // In your api/batch/submit.php, update the technician validation part:
+
+    // ==================== GET AND VALIDATE TECHNICIAN ID ====================
     $technicianId = null;
 
     if (isset($input['technician']) && isset($input['technician']['id'])) {
         $technicianId = $input['technician']['id'];
         error_log("✅ Technician ID from input: " . $technicianId);
-    } elseif (isset($input['jobDetails']) && isset($input['jobDetails']['requestedBy'])) {
-        // Try to parse from jobDetails
-        $requestedBy = $input['jobDetails']['requestedBy'];
-        if (is_numeric($requestedBy)) {
-            $technicianId = $requestedBy;
-        }
-        error_log("✅ Technician ID from jobDetails: " . $technicianId);
-    } else {
-        error_log("⚠️ No technician ID found in submission data");
-    }
 
-    // If still no technician ID, use the current user as fallback
-    if (!$technicianId) {
-        $technicianId = $userId;
-        error_log("⚠️ Using current user as technician fallback: " . $technicianId);
-    }
-
-    // Validate technician exists in users table
-    if ($technicianId) {
-        $checkStmt = $conn->prepare("SELECT id, username FROM users WHERE id = ?");
+        // Validate technician exists in users table and is active
+        $checkStmt = $conn->prepare("
+        SELECT id, username, full_name, role, is_active 
+        FROM users 
+        WHERE id = ? AND is_active = 1
+    ");
         $checkStmt->bind_param("i", $technicianId);
         $checkStmt->execute();
         $result = $checkStmt->get_result();
 
         if ($result->num_rows === 0) {
-            error_log("❌ Technician ID $technicianId not found in users table");
-            // Use current user instead
+            error_log("❌ Technician ID $technicianId not found or inactive in users table");
+            // Use current user as fallback
             $technicianId = $userId;
+            error_log("⚠️ Using current user as technician fallback: " . $technicianId);
         } else {
             $technician = $result->fetch_assoc();
-            error_log("✅ Technician validated: " . $technician['username'] . " (ID: " . $technician['id'] . ")");
+            error_log("✅ Technician validated: " . $technician['username'] .
+                " (ID: " . $technician['id'] . ", Role: " . $technician['role'] . ")");
         }
         $checkStmt->close();
+    } else {
+        error_log("⚠️ No technician data provided in submission");
+        $technicianId = $userId; // Use current user as fallback
     }
-    // ==================== END GET TECHNICIAN ID ====================
+    // ==================== END TECHNICIAN VALIDATION ====================
 
     // Generate batch ID
     $batchId = 'BATCH-' . date('YmdHis') . '-' . bin2hex(random_bytes(4));

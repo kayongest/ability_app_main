@@ -1,5 +1,5 @@
 <?php
-// batch_history.php - VERSION WITH MODAL VIEW AND AJAX FIXES
+// batch_history.php - CONNECTED TO REAL DATA
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -12,89 +12,61 @@ if (!isLoggedIn()) {
     exit();
 }
 
-// Database connection
+// Database connection - USE YOUR ACTUAL DATABASE
 $conn = new mysqli('localhost', 'root', '', 'ability_db');
 if ($conn->connect_error) {
     die("Database connection failed: " . $conn->connect_error);
 }
 
-// Create/update table if not exists
-$conn->query("CREATE TABLE IF NOT EXISTS batch_scans (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    batch_id VARCHAR(50) UNIQUE NOT NULL,
-    batch_name VARCHAR(255) NOT NULL,
-    total_items INT DEFAULT 0,
-    unique_items INT DEFAULT 0,
-    submitted_by INT,
-    requested_by INT,
-    approved_by INT,
-    approved_at DATETIME NULL,
-    submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    status ENUM('pending', 'processing', 'completed', 'cancelled') DEFAULT 'pending',
-    approval_status ENUM('pending', 'approved', 'rejected', 'not_required') DEFAULT 'pending',
-    action_applied VARCHAR(50),
-    location_applied VARCHAR(255),
-    notes TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-)");
+// REMOVE THESE TABLE CREATION AND SAMPLE DATA LINES:
+// --------------------------------------------------
+// Delete or comment out these sections:
+// 1. Create/update table if not exists
+// 2. Check and add columns if they don't exist
+// 3. Create users table if not exists
+// 4. Insert default users if not exists
+// 5. Add sample data if table is empty
+// --------------------------------------------------
 
-// Check and add columns if they don't exist
-$columns = $conn->query("SHOW COLUMNS FROM batch_scans LIKE 'requested_by'");
-if ($columns->num_rows == 0) {
-    $conn->query("ALTER TABLE batch_scans 
-        ADD COLUMN requested_by INT NULL AFTER submitted_by,
-        ADD COLUMN approved_by INT NULL AFTER requested_by,
-        ADD COLUMN approved_at DATETIME NULL AFTER approved_by,
-        ADD COLUMN approval_status ENUM('pending', 'approved', 'rejected', 'not_required') DEFAULT 'pending' AFTER status");
-}
+// INSTEAD: Get batches from your REAL data source
+// Assuming your real data is in a table called 'scans' or similar
+// Adjust table and column names based on your actual database structure
 
-// Create users table if not exists
-$conn->query("CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) NOT NULL UNIQUE,
-    email VARCHAR(100),
-    password VARCHAR(255),
-    role ENUM('admin', 'technician', 'stock_controller', 'user') DEFAULT 'user',
-    full_name VARCHAR(100),
-    department VARCHAR(100),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)");
-
-// Insert default users if not exists
-$conn->query("INSERT IGNORE INTO users (id, username, email, password, role, full_name, department) VALUES
-    (1, 'admin', 'admin@example.com', MD5('admin123'), 'admin', 'System Administrator', 'IT'),
-    (2, 'tech_john', 'john@example.com', MD5('tech123'), 'technician', 'John Smith', 'Maintenance'),
-    (3, 'stock_mike', 'mike@example.com', MD5('stock123'), 'stock_controller', 'Mike Johnson', 'Inventory'),
-    (4, 'tech_sarah', 'sarah@example.com', MD5('tech123'), 'technician', 'Sarah Williams', 'IT Support')
-");
-
-// Add sample data if table is empty
-$result = $conn->query("SELECT COUNT(*) as count FROM batch_scans");
-$row = $result->fetch_assoc();
-if ($row['count'] == 0) {
-    $conn->query("INSERT INTO batch_scans (
-        batch_id, batch_name, total_items, unique_items, 
-        submitted_by, requested_by, approved_by, approved_at,
-        status, approval_status, action_applied, location_applied, notes
-    ) VALUES
-        ('BATCH-20240201123045-abc123', 'Office Equipment Check-in', 15, 10, 1, 2, 3, '2024-02-01 13:30:00', 'completed', 'approved', 'check_in', 'Main Warehouse', 'Monthly inventory check for office equipment'),
-        ('BATCH-20240202144530-def456', 'IT Department Audit', 8, 8, 1, 4, 3, '2024-02-02 15:00:00', 'completed', 'approved', 'audit', 'IT Department', 'Annual IT equipment audit'),
-        ('BATCH-20240203110000-ghi789', 'Conference Room Setup', 5, 5, 2, 2, NULL, NULL, 'processing', 'pending', 'setup', 'Conference Room A', 'Equipment for quarterly meeting - awaiting approval'),
-        ('BATCH-20240204140000-jkl012', 'Lab Equipment Maintenance', 10, 7, 4, 4, NULL, NULL, 'pending', 'pending', 'maintenance', 'Science Lab', 'Scheduled maintenance check - not approved yet'),
-        ('BATCH-20240205103000-mno345', 'Library Books Inventory', 25, 22, 1, 4, 3, '2024-02-05 11:00:00', 'completed', 'approved', 'inventory', 'Library', 'Annual book inventory'),
-        ('BATCH-20260204204958-6b5fa39e', 'Video Equipment Inventory', 12, 8, 1, 2, 3, '2024-02-04 21:00:00', 'completed', 'approved', 'inventory', 'Media Room', 'Video and recording equipment check'),
-        ('BATCH-20240206140000-pqr678', 'Sports Equipment Check-out', 18, 12, 2, 2, NULL, NULL, 'cancelled', 'rejected', 'check_out', 'Gymnasium', 'Request cancelled by stock controller'),
-        ('BATCH-20240207113000-stu901', 'Cleaning Supplies Audit', 7, 5, 4, 4, 3, '2024-02-07 12:00:00', 'completed', 'approved', 'audit', 'Storage Room', 'Some items missing or damaged'),
-        ('BATCH-20240208150000-vwx234', 'Electronics Update', 9, 9, 2, 2, 3, '2024-02-08 16:00:00', 'completed', 'approved', 'update', 'IT Office', 'Updated software and firmware'),
-        ('BATCH-20240209100000-yz5678', 'Classroom Setup', 14, 11, 4, 4, NULL, NULL, 'processing', 'pending', 'setup', 'Room 101', 'Setting up for new semester - awaiting approval')
-    ");
-}
-
-// Get batches with user information
+// Option 1: If your real data is in 'scans' table
 $result = $conn->query("
     SELECT 
-        bs.*, 
+        s.*,
+        s.id as batch_id,
+        s.scan_date as submitted_at,
+        s.scanned_by as submitted_by,
+        u.username as submitted_by_name,
+        u.full_name as submitted_by_fullname,
+        u.role as submitted_by_role,
+        -- Add other necessary joins for requested_by, approved_by if available
+        COUNT(DISTINCT s.item_id) as total_items,
+        COUNT(DISTINCT s.item_code) as unique_items,
+        'completed' as status,
+        CASE 
+            WHEN s.approved = 1 THEN 'approved'
+            WHEN s.rejected = 1 THEN 'rejected'
+            ELSE 'pending'
+        END as approval_status,
+        s.action_type as action_applied,
+        s.location as location_applied,
+        s.notes as notes,
+        DATE_FORMAT(s.scan_date, '%M %d, %Y %h:%i %p') as formatted_submitted_at
+    FROM scans s
+    LEFT JOIN users u ON s.scanned_by = u.id
+    WHERE s.batch_id IS NOT NULL
+    GROUP BY s.batch_id, s.scan_date, s.scanned_by
+    ORDER BY s.scan_date DESC
+");
+
+// Option 2: If you have a dedicated batches table
+/*
+$result = $conn->query("
+    SELECT 
+        b.*,
         u1.username as submitted_by_name,
         u1.full_name as submitted_by_fullname,
         u1.role as submitted_by_role,
@@ -104,19 +76,75 @@ $result = $conn->query("
         u3.username as approved_by_name,
         u3.full_name as approved_by_fullname,
         u3.role as approved_by_role,
-        DATE_FORMAT(bs.approved_at, '%Y-%m-%d %H:%i:%s') as approved_at_formatted,
-        DATE_FORMAT(bs.submitted_at, '%M %d, %Y %h:%i %p') as formatted_submitted_at
-    FROM batch_scans bs 
-    LEFT JOIN users u1 ON bs.submitted_by = u1.id 
-    LEFT JOIN users u2 ON bs.requested_by = u2.id 
-    LEFT JOIN users u3 ON bs.approved_by = u3.id 
-    ORDER BY bs.submitted_at DESC
+        DATE_FORMAT(b.approved_at, '%Y-%m-%d %H:%i:%s') as approved_at_formatted,
+        DATE_FORMAT(b.created_at, '%M %d, %Y %h:%i %p') as formatted_submitted_at
+    FROM batches b
+    LEFT JOIN users u1 ON b.submitted_by = u1.id 
+    LEFT JOIN users u2 ON b.requested_by = u2.id 
+    LEFT JOIN users u3 ON b.approved_by = u3.id 
+    ORDER BY b.created_at DESC
 ");
+*/
+
+// Option 3: If you need to process individual scans into batches
+// (Use this if scans don't have batch_id but were done in groups)
+/*
+$result = $conn->query("
+    SELECT 
+        DATE(s.scan_date) as batch_date,
+        s.scanned_by,
+        u.username as submitted_by_name,
+        u.full_name as submitted_by_fullname,
+        COUNT(*) as total_items,
+        COUNT(DISTINCT s.item_code) as unique_items,
+        GROUP_CONCAT(DISTINCT s.action_type) as actions,
+        GROUP_CONCAT(DISTINCT s.location) as locations,
+        MAX(s.scan_date) as submitted_at,
+        DATE_FORMAT(MAX(s.scan_date), '%M %d, %Y %h:%i %p') as formatted_submitted_at,
+        CONCAT('BATCH-', DATE_FORMAT(s.scan_date, '%Y%m%d'), '-', s.scanned_by) as batch_id,
+        CONCAT('Daily Scan - ', DATE_FORMAT(s.scan_date, '%M %d, %Y')) as batch_name,
+        'completed' as status,
+        'approved' as approval_status
+    FROM scans s
+    LEFT JOIN users u ON s.scanned_by = u.id
+    WHERE DATE(s.scan_date) >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+    GROUP BY DATE(s.scan_date), s.scanned_by
+    ORDER BY s.scan_date DESC
+");
+*/
 
 $batches = [];
-if ($result) {
+if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
-        $batches[] = $row;
+        // Format the data to match your existing structure
+        $batches[] = [
+            'id' => $row['id'] ?? uniqid(),
+            'batch_id' => $row['batch_id'] ?? 'BATCH-' . date('YmdHis'),
+            'batch_name' => $row['batch_name'] ?? 'Scan Batch',
+            'total_items' => $row['total_items'] ?? 0,
+            'unique_items' => $row['unique_items'] ?? 0,
+            'submitted_by' => $row['submitted_by'] ?? $_SESSION['user_id'],
+            'submitted_by_name' => $row['submitted_by_name'] ?? $_SESSION['username'],
+            'submitted_by_fullname' => $row['submitted_by_fullname'] ?? 'Unknown User',
+            'submitted_by_role' => $row['submitted_by_role'] ?? 'user',
+            'requested_by' => $row['requested_by'] ?? null,
+            'requested_by_name' => $row['requested_by_name'] ?? null,
+            'requested_by_fullname' => $row['requested_by_fullname'] ?? null,
+            'requested_by_role' => $row['requested_by_role'] ?? null,
+            'approved_by' => $row['approved_by'] ?? null,
+            'approved_by_name' => $row['approved_by_name'] ?? null,
+            'approved_by_fullname' => $row['approved_by_fullname'] ?? null,
+            'approved_by_role' => $row['approved_by_role'] ?? null,
+            'approved_at' => $row['approved_at'] ?? null,
+            'approved_at_formatted' => $row['approved_at_formatted'] ?? null,
+            'submitted_at' => $row['submitted_at'] ?? date('Y-m-d H:i:s'),
+            'formatted_submitted_at' => $row['formatted_submitted_at'] ?? date('M d, Y h:i A'),
+            'status' => $row['status'] ?? 'completed',
+            'approval_status' => $row['approval_status'] ?? 'pending',
+            'action_applied' => $row['action_applied'] ?? 'scan',
+            'location_applied' => $row['location_applied'] ?? 'Unknown Location',
+            'notes' => $row['notes'] ?? 'No notes available'
+        ];
     }
 }
 

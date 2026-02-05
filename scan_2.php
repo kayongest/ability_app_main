@@ -642,6 +642,7 @@ if (!file_exists($libraryPath)) {
 </style>
 
 <!-- Batch Submission Modal -->
+<!-- Batch Submission Modal -->
 <div class="modal fade" id="batchSubmitModal" tabindex="-1" aria-labelledby="batchSubmitModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
@@ -651,15 +652,15 @@ if (!file_exists($libraryPath)) {
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+
             <div class="modal-body">
-                <!-- Authentication Section -->
-                <div class="card mb-4 border-warning">
+                <!-- Authentication Section (Always Visible First) -->
+                <div id="authenticationSection" class="card mb-4 border-warning">
                     <div class="card-header bg-warning text-dark">
                         <h6 class="mb-0"><i class="fas fa-user-lock me-2"></i>Technician Authentication Required</h6>
                     </div>
                     <div class="card-body">
-                        <!-- Authentication Section -->
-                        <div class="auth-section">
+                        <form id="technicianAuthForm" onsubmit="authenticateTechnicianAsStockController(); return false;">
                             <h6 class="mb-3">
                                 <i class="fas fa-user-shield me-1"></i>Technician Authentication
                                 <small class="text-muted ms-2">(Verified by Stock Controller)</small>
@@ -668,298 +669,309 @@ if (!file_exists($libraryPath)) {
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label">Select Technician</label>
-                                    <select id="technicianSelect" class="form-select">
+                                    <select id="technicianSelect" class="form-select" required>
                                         <option value="">-- Select Technician --</option>
                                     </select>
+                                    <div class="invalid-feedback">Please select a technician.</div>
                                     <div id="authTechnicianInfo" class="mt-2 d-none"></div>
                                 </div>
 
                                 <div class="col-md-6">
                                     <label class="form-label">Technician Password</label>
-                                    <div class="input-group">
+                                    <div class="input-group has-validation">
                                         <input type="password" id="technicianPassword" class="form-control"
-                                            placeholder="Enter technician's password">
+                                            placeholder="Enter technician's password"
+                                            autocomplete="current-password"
+                                            required>
                                         <button class="btn btn-outline-secondary" type="button" id="togglePassword">
                                             <i class="fas fa-eye"></i>
                                         </button>
+                                        <div class="invalid-feedback">Please enter the technician's password.</div>
                                     </div>
                                     <div id="authStatus" class="mt-2"></div>
                                 </div>
                             </div>
 
                             <div class="text-center mt-3">
-                                <button id="authenticateBtn" class="btn btn-primary" disabled>
-                                    <i class="fas fa-user-check me-1"></i>Verify Technician
+                                <button id="authenticateBtn" type="submit" class="btn btn-primary">
+                                    <i class="fas fa-user-check me-1"></i>Verify & Continue
+                                </button>
+                                <button type="button" class="btn btn-secondary ms-2" data-bs-dismiss="modal">
+                                    <i class="fas fa-times me-1"></i>Cancel
                                 </button>
                             </div>
-                        </div>
+                        </form>
                     </div>
                 </div>
 
-                <!-- Authentication Success (Hidden by default) -->
-                <div id="authSuccessSection" class="d-none">
-                    <!-- Top Info Section -->
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <div class="alert alert-success">
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-check-circle fa-2x me-3"></i>
-                                    <div>
-                                        <h6 class="mb-1"><i class="fas fa-user-check me-1"></i> Technician Authenticated</h6>
-                                        <p class="mb-0"><strong id="authenticatedTechnicianName"></strong> successfully authenticated</p>
+                <!-- Main Batch Form (Hidden until authentication) -->
+                <div id="batchFormSection" class="d-none">
+                    <!-- Authentication Success -->
+                    <div id="authSuccessSection">
+                        <!-- Top Info Section -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="alert alert-success">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-check-circle fa-2x me-3"></i>
+                                        <div>
+                                            <h6 class="mb-1"><i class="fas fa-user-check me-1"></i> Technician Authenticated</h6>
+                                            <p class="mb-0"><strong id="authenticatedTechnicianName"></strong> successfully authenticated</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="alert alert-info">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-user-tie fa-2x me-3"></i>
+                                        <div>
+                                            <h6 class="mb-1"><i class="fas fa-user-shield me-1"></i> Stock Controller</h6>
+                                            <p class="mb-0">Logged in as: <strong id="submittedByDisplay"><?php echo htmlspecialchars($_SESSION['username'] ?? 'System'); ?></strong></p>
+                                            <small>Full Name: <span id="submittedByFullName"><?php echo htmlspecialchars($_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Stock Controller'); ?></span></small>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="alert alert-info">
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-user-tie fa-2x me-3"></i>
-                                    <div>
-                                        <h6 class="mb-1"><i class="fas fa-user-shield me-1"></i> Stock Controller</h6>
-                                        <p class="mb-0">Logged in as: <strong id="submittedByDisplay"><?php echo htmlspecialchars($_SESSION['username'] ?? 'System'); ?></strong></p>
-                                        <small>Full Name: <span id="submittedByFullName"><?php echo htmlspecialchars($_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Stock Controller'); ?></span></small>
+
+                        <!-- Two Column Layout -->
+                        <div class="row">
+                            <!-- Left Column: Job Details -->
+                            <div class="col-md-6">
+                                <div class="card mb-4">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Job & Location Details</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="jobDetailsForm">
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label for="stockLocation" class="form-label">
+                                                        <i class="fas fa-warehouse me-1"></i> Stock Location *
+                                                    </label>
+                                                    <select id="stockLocation" class="form-select" required>
+                                                        <option value="">-- Select Location --</option>
+                                                        <option value="KCC">KCC</option>
+                                                        <option value="Warehouse A">Warehouse A</option>
+                                                        <option value="Site Office">Site Office</option>
+                                                        <option value="Storage Room">Storage Room</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="eventName" class="form-label">
+                                                        <i class="fas fa-calendar-alt me-1"></i> Event Name *
+                                                    </label>
+                                                    <input type="text" class="form-control" id="eventName" value="Hibiscus" required>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="jobSheet" class="form-label">
+                                                        <i class="fas fa-file-alt me-1"></i> Job Sheet *
+                                                    </label>
+                                                    <input type="text" class="form-control" id="jobSheet" value="JS-00254" required>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="projectManager" class="form-label">
+                                                        <i class="fas fa-user-tie me-1"></i> Project Manager *
+                                                    </label>
+                                                    <input type="text" class="form-control" id="projectManager" value="Hirwa Aubin" required>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="vehicleNumber" class="form-label">
+                                                        <i class="fas fa-truck me-1"></i> Vehicle Number *
+                                                    </label>
+                                                    <input type="text" class="form-control" id="vehicleNumber" value="RAH 847" required>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="driverName" class="form-label">
+                                                        <i class="fas fa-user me-1"></i> Driver Name *
+                                                    </label>
+                                                    <input type="text" class="form-control" id="driverName" value="Valentin" required>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+
+                                <div class="card mb-4">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0"><i class="fas fa-user-check me-2"></i>Approval Details</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="approvalForm">
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label for="requestedBy" class="form-label">
+                                                        <i class="fas fa-user-edit me-1"></i> Requested By *
+                                                    </label>
+                                                    <input type="text" class="form-control bg-light" id="requestedBy"
+                                                        placeholder="Select and verify technician first" readonly>
+                                                    <small class="text-muted">Auto-filled after technician verification</small>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="submittedBy" class="form-label">
+                                                        <i class="fas fa-user-shield me-1"></i> Submitted By *
+                                                    </label>
+                                                    <input type="text" class="form-control bg-light" id="submittedBy"
+                                                        value="<?php echo htmlspecialchars($_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Stock Controller'); ?>" readonly>
+                                                    <small class="text-muted">Stock Controller</small>
+                                                </div>
+                                                <div class="col-md-12">
+                                                    <label for="approvalNotes" class="form-label">
+                                                        <i class="fas fa-sticky-note me-1"></i> Approval Notes
+                                                    </label>
+                                                    <textarea class="form-control" id="approvalNotes" rows="2"
+                                                        placeholder="Notes from stock controller approval..."></textarea>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right Column: Items Summary -->
+                            <div class="col-md-6">
+                                <!-- Items Preview Card -->
+                                <div class="card mb-4">
+                                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0"><i class="fas fa-boxes me-2"></i>Items Summary
+                                            <span class="badge bg-warning ms-2" id="batchItemCount">0</span>
+                                        </h6>
+                                        <div>
+                                            <span class="badge bg-primary" id="summaryTotal">0</span> total items
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <!-- Quick Stats -->
+                                        <div class="row text-center mb-3">
+                                            <div class="col-4">
+                                                <div class="bg-success bg-opacity-10 p-2 rounded">
+                                                    <div class="h4 mb-1" id="summaryAvailable">0</div>
+                                                    <small class="text-muted">Available</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="bg-warning bg-opacity-10 p-2 rounded">
+                                                    <div class="h4 mb-1" id="summaryInUse">0</div>
+                                                    <small class="text-muted">In Use</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="bg-danger bg-opacity-10 p-2 rounded">
+                                                    <div class="h4 mb-1" id="summaryMaintenance">0</div>
+                                                    <small class="text-muted">Maintenance</small>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Items Table -->
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-hover">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>Item</th>
+                                                        <th>Serial</th>
+                                                        <th>Qty</th>
+                                                        <th>Destination</th>
+                                                        <th>Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="itemsPreviewTable">
+                                                    <!-- Items will be dynamically added here -->
+                                                </tbody>
+                                                <tfoot>
+                                                    <tr>
+                                                        <td colspan="3" class="text-end"><strong>Total Items:</strong></td>
+                                                        <td colspan="2"><strong id="totalItemsCount">0</strong></td>
+                                                    </tr>
+                                                </tfoot>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Batch Actions Card -->
+                                <div class="card mb-4">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0"><i class="fas fa-cogs me-2"></i>Batch Actions</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="batchActionsForm">
+                                            <div class="row">
+                                                <div class="col-md-6 mb-3">
+                                                    <label for="batchAction" class="form-label">Apply Action to All Items</label>
+                                                    <select class="form-select" id="batchAction">
+                                                        <option value="">No Action (Keep Current)</option>
+                                                        <option value="release">Release for Use</option>
+                                                        <option value="transfer">Transfer to Location</option>
+                                                        <option value="maintenance">Send for Maintenance</option>
+                                                        <option value="return">Return to Stock</option>
+                                                        <option value="check_in">Check In All</option>
+                                                        <option value="check_out">Check Out All</option>
+                                                        <option value="available">Mark All as Available</option>
+                                                    </select>
+                                                    <small class="form-text text-muted">This will override individual item statuses</small>
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label for="batchLocation" class="form-label">Set Destination for All Items</label>
+                                                    <input type="text" class="form-control" id="batchLocation" value="KCC" placeholder="Where items are going">
+                                                    <small class="form-text text-muted">Default: KCC (change if needed)</small>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+
+                                <!-- Additional Notes -->
+                                <div class="card">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0"><i class="fas fa-comments me-2"></i>Additional Information</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="notesForm">
+                                            <div class="mb-3">
+                                                <label for="batchNotes" class="form-label">
+                                                    <i class="fas fa-sticky-note me-1"></i>Batch Notes
+                                                </label>
+                                                <textarea class="form-control" id="batchNotes" rows="2"
+                                                    placeholder="Purpose, special instructions, or additional details..."></textarea>
+                                            </div>
+                                        </form>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Two Column Layout -->
-                    <div class="row">
-                        <!-- Left Column: Job Details -->
-                        <div class="col-md-6">
-                            <div class="card mb-4">
-                                <div class="card-header bg-light">
-                                    <h6 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Job & Location Details</h6>
-                                </div>
-                                <div class="card-body">
-                                    <form id="jobDetailsForm">
-                                        <div class="row g-3">
-                                            <div class="col-md-6">
-                                                <label for="stockLocation" class="form-label">
-                                                    <i class="fas fa-warehouse me-1"></i> Stock Location *
-                                                </label>
-                                                <select id="stockLocation" class="form-select" required>
-                                                    <option value="">-- Select Location --</option>
-                                                    <option value="KCC">KCC</option>
-                                                    <option value="Warehouse A">Warehouse A</option>
-                                                    <option value="Site Office">Site Office</option>
-                                                    <option value="Storage Room">Storage Room</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label for="eventName" class="form-label">
-                                                    <i class="fas fa-calendar-alt me-1"></i> Event Name *
-                                                </label>
-                                                <input type="text" class="form-control" id="eventName" value="Hibiscus" required>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label for="jobSheet" class="form-label">
-                                                    <i class="fas fa-file-alt me-1"></i> Job Sheet *
-                                                </label>
-                                                <input type="text" class="form-control" id="jobSheet" value="JS-00254" required>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label for="projectManager" class="form-label">
-                                                    <i class="fas fa-user-tie me-1"></i> Project Manager *
-                                                </label>
-                                                <input type="text" class="form-control" id="projectManager" value="Hirwa Aubin" required>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label for="vehicleNumber" class="form-label">
-                                                    <i class="fas fa-truck me-1"></i> Vehicle Number *
-                                                </label>
-                                                <input type="text" class="form-control" id="vehicleNumber" value="RAH 847" required>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label for="driverName" class="form-label">
-                                                    <i class="fas fa-user me-1"></i> Driver Name *
-                                                </label>
-                                                <input type="text" class="form-control" id="driverName" value="Valentin" required>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-
-                            <div class="card mb-4">
-                                <div class="card-header bg-light">
-                                    <h6 class="mb-0"><i class="fas fa-user-check me-2"></i>Approval Details</h6>
-                                </div>
-                                <div class="card-body">
-                                    <form id="approvalForm">
-                                        <div class="row g-3">
-                                            <div class="col-md-6">
-                                                <label for="requestedBy" class="form-label">
-                                                    <i class="fas fa-user-edit me-1"></i> Requested By *
-                                                </label>
-                                                <input type="text" class="form-control bg-light" id="requestedBy"
-                                                    placeholder="Select and verify technician first" readonly>
-                                                <small class="text-muted">Auto-filled after technician verification</small>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label for="submittedBy" class="form-label">
-                                                    <i class="fas fa-user-shield me-1"></i> Submitted By *
-                                                </label>
-                                                <input type="text" class="form-control bg-light" id="submittedBy"
-                                                    value="<?php echo htmlspecialchars($_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Stock Controller'); ?>" readonly>
-                                                <small class="text-muted">Stock Controller</small>
-                                            </div>
-                                            <div class="col-md-12">
-                                                <label for="approvalNotes" class="form-label">
-                                                    <i class="fas fa-sticky-note me-1"></i> Approval Notes
-                                                </label>
-                                                <textarea class="form-control" id="approvalNotes" rows="2"
-                                                    placeholder="Notes from stock controller approval..."></textarea>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Right Column: Items Summary -->
-                        <div class="col-md-6">
-                            <!-- Items Preview Card -->
-                            <div class="card mb-4">
-                                <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                                    <h6 class="mb-0"><i class="fas fa-boxes me-2"></i>Items Summary
-                                        <span class="badge bg-warning ms-2" id="batchItemCount">0</span>
-                                    </h6>
-                                    <div>
-                                        <span class="badge bg-primary" id="summaryTotal">0</span> total items
+                        <!-- Confirmation Section -->
+                        <div class="card mt-4 border-primary">
+                            <div class="card-body">
+                                <form id="confirmationForm">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="confirmBatchSubmit" required>
+                                        <label class="form-check-label" for="confirmBatchSubmit">
+                                            <i class="fas fa-shield-alt me-1"></i>
+                                            <strong>I confirm that:</strong>
+                                            <ul class="mb-0 mt-2">
+                                                <li>Technician <strong id="confirmationTechnicianName"></strong> has been authenticated</li>
+                                                <li>All items listed are accurate and verified</li>
+                                                <li>Job details and approval information are correct</li>
+                                                <li>This submission is authorized for processing</li>
+                                                <li>Submitted by: <strong><?php echo htmlspecialchars($_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Stock Controller'); ?></strong> (Stock Controller)</li>
+                                            </ul>
+                                        </label>
                                     </div>
-                                </div>
-                                <div class="card-body">
-                                    <!-- Quick Stats -->
-                                    <div class="row text-center mb-3">
-                                        <div class="col-4">
-                                            <div class="bg-success bg-opacity-10 p-2 rounded">
-                                                <div class="h4 mb-1" id="summaryAvailable">0</div>
-                                                <small class="text-muted">Available</small>
-                                            </div>
-                                        </div>
-                                        <div class="col-4">
-                                            <div class="bg-warning bg-opacity-10 p-2 rounded">
-                                                <div class="h4 mb-1" id="summaryInUse">0</div>
-                                                <small class="text-muted">In Use</small>
-                                            </div>
-                                        </div>
-                                        <div class="col-4">
-                                            <div class="bg-danger bg-opacity-10 p-2 rounded">
-                                                <div class="h4 mb-1" id="summaryMaintenance">0</div>
-                                                <small class="text-muted">Maintenance</small>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Items Table -->
-                                    <div class="table-responsive">
-                                        <table class="table table-sm table-hover">
-                                            <thead class="table-light">
-                                                <tr>
-                                                    <th>Item</th>
-                                                    <th>Serial</th>
-                                                    <th>Qty</th>
-                                                    <th>Destination</th>
-                                                    <th>Status</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="itemsPreviewTable">
-                                                <!-- Items will be dynamically added here -->
-                                            </tbody>
-                                            <tfoot>
-                                                <tr>
-                                                    <td colspan="3" class="text-end"><strong>Total Items:</strong></td>
-                                                    <td colspan="2"><strong id="totalItemsCount">0</strong></td>
-                                                </tr>
-                                            </tfoot>
-                                        </table>
-                                    </div>
-                                </div>
+                                </form>
                             </div>
-
-                            <!-- Batch Actions Card -->
-                            <div class="card mb-4">
-                                <div class="card-header bg-light">
-                                    <h6 class="mb-0"><i class="fas fa-cogs me-2"></i>Batch Actions</h6>
-                                </div>
-                                <div class="card-body">
-                                    <form id="batchActionsForm">
-                                        <div class="row">
-                                            <div class="col-md-6 mb-3">
-                                                <label for="batchAction" class="form-label">Apply Action to All Items</label>
-                                                <select class="form-select" id="batchAction">
-                                                    <option value="">No Action (Keep Current)</option>
-                                                    <option value="release">Release for Use</option>
-                                                    <option value="transfer">Transfer to Location</option>
-                                                    <option value="maintenance">Send for Maintenance</option>
-                                                    <option value="return">Return to Stock</option>
-                                                    <option value="check_in">Check In All</option>
-                                                    <option value="check_out">Check Out All</option>
-                                                    <option value="available">Mark All as Available</option>
-                                                </select>
-                                                <small class="form-text text-muted">This will override individual item statuses</small>
-                                            </div>
-                                            <div class="col-md-6 mb-3">
-                                                <label for="batchLocation" class="form-label">Set Destination for All Items</label>
-                                                <input type="text" class="form-control" id="batchLocation" value="KCC" placeholder="Where items are going">
-                                                <small class="form-text text-muted">Default: KCC (change if needed)</small>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-
-                            <!-- Additional Notes -->
-                            <div class="card">
-                                <div class="card-header bg-light">
-                                    <h6 class="mb-0"><i class="fas fa-comments me-2"></i>Additional Information</h6>
-                                </div>
-                                <div class="card-body">
-                                    <form id="notesForm">
-                                        <div class="mb-3">
-                                            <label for="batchNotes" class="form-label">
-                                                <i class="fas fa-sticky-note me-1"></i>Batch Notes
-                                            </label>
-                                            <textarea class="form-control" id="batchNotes" rows="2"
-                                                placeholder="Purpose, special instructions, or additional details..."></textarea>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Confirmation Section -->
-                    <div class="card mt-4 border-primary">
-                        <div class="card-body">
-                            <form id="confirmationForm">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="confirmBatchSubmit" required>
-                                    <label class="form-check-label" for="confirmBatchSubmit">
-                                        <i class="fas fa-shield-alt me-1"></i>
-                                        <strong>I confirm that:</strong>
-                                        <ul class="mb-0 mt-2">
-                                            <li>Technician <strong id="confirmationTechnicianName"></strong> has been authenticated</li>
-                                            <li>All items listed are accurate and verified</li>
-                                            <li>Job details and approval information are correct</li>
-                                            <li>This submission is authorized for processing</li>
-                                            <li>Submitted by: <strong><?php echo htmlspecialchars($_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Stock Controller'); ?></strong> (Stock Controller)</li>
-                                        </ul>
-                                    </label>
-                                </div>
-                            </form>
                         </div>
                     </div>
                 </div>
             </div>
+
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                     <i class="fas fa-times me-1"></i> Cancel
                 </button>
-                <button type="button" class="btn btn-primary" onclick="printBatchSummary()" id="printPreviewBtn" disabled>
+                <button type="button" class="btn btn-info" onclick="printBatchSummary()" id="printPreviewBtn" disabled>
                     <i class="fas fa-print me-1"></i> Print Preview
                 </button>
                 <button type="button" class="btn btn-success" id="submitBatchBtn" disabled>
@@ -2281,24 +2293,851 @@ if (!file_exists($libraryPath)) {
 
     // ==================== TECHNICIAN AUTHENTICATION FUNCTIONS ====================
     function initializeTechnicianAuthentication() {
-        console.log('🔐 Initializing technician authentication (Stock Controller Mode)...');
+        console.log('🔐 Initializing technician authentication...');
+
+        // Always start with authentication section visible
+        showAuthenticationSection();
 
         // Clear any previous authentication
         isTechnicianAuthenticated = false;
         authenticatedTechnician = null;
 
-        // Set stock controller name (readonly, from session)
+        // Set stock controller name
         setStockControllerName();
 
         // Load technicians from database
-        loadTechniciansForStockController();
+        loadRealTechniciansFromDatabase();
 
         // Setup event listeners
         setupAuthEventListeners();
 
-        // Reset modal state
-        resetAuthUI();
+        // Reset form state
+        resetFormState();
     }
+
+    function showAuthenticationSection() {
+        const authSection = document.getElementById('authenticationSection');
+        const batchFormSection = document.getElementById('batchFormSection');
+
+        if (authSection) authSection.classList.remove('d-none');
+        if (batchFormSection) batchFormSection.classList.add('d-none');
+    }
+
+    function showBatchFormSection() {
+        const authSection = document.getElementById('authenticationSection');
+        const batchFormSection = document.getElementById('batchFormSection');
+
+        if (authSection) authSection.classList.add('d-none');
+        if (batchFormSection) batchFormSection.classList.remove('d-none');
+    }
+
+    async function loadRealTechniciansFromDatabase() {
+        console.log('👨‍🔧 Loading REAL technicians from database...');
+
+        const technicianSelect = document.getElementById('technicianSelect');
+        if (!technicianSelect) {
+            console.error('❌ technicianSelect element not found');
+            return;
+        }
+
+        // Show loading state
+        technicianSelect.innerHTML = '<option value="">Loading technicians...</option>';
+        technicianSelect.disabled = true;
+
+        try {
+            // Try multiple API endpoints
+            const apiEndpoints = [
+                'api/test/technicians.php',
+                'api/technicians/get_all.php',
+                'api/users/get_all.php?role=technician',
+                'api/users/get_technicians.php'
+            ];
+
+            let technicians = [];
+            let foundEndpoint = '';
+
+            for (const endpoint of apiEndpoints) {
+                try {
+                    console.log(`Trying endpoint: ${endpoint}`);
+                    const response = await fetch(endpoint);
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log(`Response from ${endpoint}:`, data);
+
+                        if (data.success && data.technicians) {
+                            technicians = data.technicians;
+                            foundEndpoint = endpoint;
+                            break;
+                        } else if (data.success && data.users) {
+                            technicians = data.users.filter(user =>
+                                user.role === 'technician' ||
+                                user.role === 'tech' ||
+                                user.role === 'user'
+                            );
+                            foundEndpoint = endpoint;
+                            break;
+                        } else if (Array.isArray(data)) {
+                            technicians = data;
+                            foundEndpoint = endpoint;
+                            break;
+                        }
+                    }
+                } catch (error) {
+                    console.log(`Endpoint ${endpoint} failed:`, error.message);
+                    continue;
+                }
+            }
+
+            if (technicians.length === 0) {
+                console.log('⚠️ No technicians found in database, trying direct query...');
+
+                // Create a simple test endpoint to get technicians
+                try {
+                    const testResponse = await fetch('api/test/get_technicians_direct.php');
+                    if (testResponse.ok) {
+                        const testData = await testResponse.json();
+                        if (testData.success && testData.technicians) {
+                            technicians = testData.technicians;
+                            foundEndpoint = 'direct query';
+                        }
+                    }
+                } catch (testError) {
+                    console.log('Direct query failed:', testError);
+                }
+            }
+
+            if (technicians.length === 0) {
+                throw new Error('No technicians found in any endpoint');
+            }
+
+            console.log(`✅ Found ${technicians.length} technicians from ${foundEndpoint}`);
+            populateTechnicianDropdown(technicians);
+
+        } catch (error) {
+            console.error('❌ Error loading technicians:', error);
+
+            // Use hardcoded technicians as fallback
+            useHardcodedTechnicians();
+        }
+    }
+
+    function populateTechnicianDropdown(technicians) {
+        const select = document.getElementById('technicianSelect');
+        if (!select) return;
+
+        // Clear existing options
+        select.innerHTML = '';
+
+        // Add default option
+        const defaultOption = document.createElement('option');
+        defaultOption.value = "";
+        defaultOption.textContent = "-- Select Technician --";
+        defaultOption.disabled = true;
+        defaultOption.selected = true;
+        select.appendChild(defaultOption);
+
+        if (!technicians || technicians.length === 0) {
+            const noDataOption = document.createElement('option');
+            noDataOption.value = "";
+            noDataOption.textContent = "No technicians available";
+            noDataOption.disabled = true;
+            select.appendChild(noDataOption);
+            select.disabled = false;
+            return;
+        }
+
+        // Sort technicians by name
+        technicians.sort((a, b) => {
+            const nameA = (a.full_name || a.username || '').toUpperCase();
+            const nameB = (b.full_name || b.username || '').toUpperCase();
+            return nameA.localeCompare(nameB);
+        });
+
+        // Add technician options
+        technicians.forEach(tech => {
+            const option = document.createElement('option');
+            option.value = tech.id || tech.user_id || '';
+
+            // Build display text
+            let displayText = tech.full_name || tech.username || 'Unknown Technician';
+            if (tech.department && tech.department !== 'Not specified') {
+                displayText += ` - ${tech.department}`;
+            }
+            if (tech.role && tech.role !== 'technician') {
+                displayText += ` (${tech.role})`;
+            }
+
+            option.textContent = displayText;
+            option.dataset.username = tech.username || '';
+            option.dataset.fullname = tech.full_name || tech.username || '';
+            option.dataset.department = tech.department || '';
+            option.dataset.email = tech.email || '';
+            option.dataset.role = tech.role || '';
+
+            select.appendChild(option);
+        });
+
+        select.disabled = false;
+        console.log(`✅ Populated dropdown with ${technicians.length} technicians`);
+    }
+
+    function useHardcodedTechnicians() {
+        console.log('⚠️ Using hardcoded technician data as fallback');
+
+        const select = document.getElementById('technicianSelect');
+        if (!select) return;
+
+        select.innerHTML = `
+        <option value="">-- Select Technician --</option>
+        <option value="2" data-username="kayongest" data-fullname="kayongest" data-department="Administration" data-email="admin@ab.com" data-role="admin">kayongest - Administration (admin)</option>
+        <option value="4" data-username="admin" data-fullname="admin" data-department="Not specified" data-email="admin@example.com" data-role="admin">admin - Not specified (admin)</option>
+        <option value="5" data-username="raul" data-fullname="raul" data-department="VIDEO" data-email="raul@ab.com" data-role="user">raul - VIDEO (user)</option>
+    `;
+        select.disabled = false;
+
+        showNotification('warning', 'Using fallback technician data. Some features may be limited.');
+    }
+
+    async function authenticateTechnicianAsStockController() {
+        const technicianSelect = document.getElementById('technicianSelect');
+        const passwordInput = document.getElementById('technicianPassword');
+        const authStatus = document.getElementById('authStatus');
+
+        if (!technicianSelect || !passwordInput || !authStatus) {
+            showToast('error', 'Authentication elements not found');
+            return;
+        }
+
+        const technicianId = technicianSelect.value;
+        const password = passwordInput.value;
+        const selectedOption = technicianSelect.options[technicianSelect.selectedIndex];
+
+        if (!technicianId) {
+            showToast('error', 'Please select a technician');
+            return;
+        }
+
+        if (!password) {
+            showToast('error', 'Please enter the technician\'s password');
+            return;
+        }
+
+        // Disable button during authentication
+        const authBtn = document.getElementById('authenticateBtn');
+        if (authBtn) {
+            authBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Verifying...';
+            authBtn.disabled = true;
+        }
+
+        try {
+            // Try to verify against real database
+            const response = await fetch('api/test/verify_technician_direct.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    technician_id: technicianId,
+                    password: password
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log('Verification response:', data);
+
+                if (data.success) {
+                    // Get technician data from the selected option
+                    const technicianData = {
+                        id: technicianId,
+                        username: selectedOption.dataset.username,
+                        full_name: selectedOption.dataset.fullname,
+                        department: selectedOption.dataset.department,
+                        email: selectedOption.dataset.email,
+                        role: selectedOption.dataset.role,
+                        verified_at: new Date().toISOString()
+                    };
+
+                    handleSuccessfulAuthentication(technicianData);
+                    return;
+                } else {
+                    handleFailedAuthentication(data.message || 'Invalid password');
+                    return;
+                }
+            }
+        } catch (error) {
+            console.error('Database verification failed:', error);
+        }
+
+        // Fallback to simple verification (for testing)
+        handleSimpleVerification(technicianId, password, selectedOption);
+    }
+
+    function handleSimpleVerification(technicianId, password, selectedOption) {
+        console.log('⚠️ Using simple verification (testing mode)');
+
+        // Simple password check for testing
+        const knownPasswords = {
+            '2': 'password', // kayongest
+            '4': 'admin123', // admin
+            '5': 'raul123' // raul
+        };
+
+        const expectedPassword = knownPasswords[technicianId];
+
+        if (expectedPassword && password === expectedPassword) {
+            const technicianData = {
+                id: technicianId,
+                username: selectedOption.dataset.username,
+                full_name: selectedOption.dataset.fullname,
+                department: selectedOption.dataset.department,
+                email: selectedOption.dataset.email,
+                role: selectedOption.dataset.role,
+                verified_at: new Date().toISOString()
+            };
+
+            handleSuccessfulAuthentication(technicianData);
+        } else {
+            handleFailedAuthentication('Invalid password. Please try again.');
+        }
+    }
+
+    function handleSuccessfulAuthentication(technicianData) {
+        // Check if required elements exist
+        const authenticatedTechnicianName = document.getElementById('authenticatedTechnicianName');
+        const confirmationTechnicianName = document.getElementById('confirmationTechnicianName');
+        const requestedByField = document.getElementById('requestedBy');
+        const authStatus = document.getElementById('authStatus');
+
+        if (!authenticatedTechnicianName || !confirmationTechnicianName || !requestedByField || !authStatus) {
+            console.error('❌ Required elements not found for authentication success');
+            showToast('error', 'UI elements missing. Please refresh the page.');
+            return;
+        }
+
+        authenticatedTechnician = {
+            id: technicianData.id,
+            username: technicianData.username,
+            full_name: technicianData.full_name,
+            department: technicianData.department || 'Not specified',
+            email: technicianData.email || '',
+            verified_at: technicianData.verified_at || new Date().toISOString()
+        };
+
+        // Save to sessionStorage
+        sessionStorage.setItem('authenticatedTechnician', JSON.stringify(authenticatedTechnician));
+        console.log('💾 Technician saved to sessionStorage:', authenticatedTechnician);
+
+        // Show success message
+        authStatus.innerHTML = `
+        <div class="alert alert-success alert-sm mt-2 mb-0">
+            <i class="fas fa-check-circle me-1"></i>
+            Technician verified successfully. Password is correct.
+        </div>
+    `;
+
+        // Set technician names
+        authenticatedTechnicianName.textContent = authenticatedTechnician.full_name;
+        confirmationTechnicianName.textContent = authenticatedTechnician.full_name;
+
+        // Fill requestedBy field
+        requestedByField.value = authenticatedTechnician.full_name;
+
+        // Update modal data
+        updateBatchModalData();
+
+        // Show the batch form section
+        setTimeout(() => {
+            showBatchFormSection();
+            isTechnicianAuthenticated = true;
+
+            // Enable form controls
+            const printPreviewBtn = document.getElementById('printPreviewBtn');
+            const confirmCheckbox = document.getElementById('confirmBatchSubmit');
+
+            if (printPreviewBtn) printPreviewBtn.disabled = false;
+            if (confirmCheckbox) {
+                confirmCheckbox.disabled = false;
+                // Auto-check confirmation
+                if (!confirmCheckbox.checked) {
+                    confirmCheckbox.checked = true;
+                    confirmCheckbox.dispatchEvent(new Event('change'));
+                }
+            }
+
+            showToast('success', `Verified: ${authenticatedTechnician.full_name} is authenticated`);
+        }, 1000);
+    }
+
+    function handleFailedAuthentication(message) {
+        isTechnicianAuthenticated = false;
+        authenticatedTechnician = null;
+
+        const authStatus = document.getElementById('authStatus');
+        if (authStatus) {
+            authStatus.innerHTML = `
+            <div class="alert alert-danger alert-sm mt-2 mb-0">
+                <i class="fas fa-times-circle me-1"></i>
+                ${escapeHtml(message)}
+            </div>
+        `;
+        }
+
+        // Clear password field
+        const passwordInput = document.getElementById('technicianPassword');
+        if (passwordInput) {
+            passwordInput.value = '';
+            passwordInput.focus();
+        }
+
+        showToast('error', 'Authentication failed');
+    }
+
+    function setupAuthEventListeners() {
+        const toggleBtn = document.getElementById('togglePassword');
+        const authBtn = document.getElementById('authenticateBtn');
+        const technicianSelect = document.getElementById('technicianSelect');
+        const passwordInput = document.getElementById('technicianPassword');
+        const confirmCheckbox = document.getElementById('confirmBatchSubmit');
+        const backToAuthBtn = document.getElementById('backToAuthBtn');
+        const technicianAuthForm = document.getElementById('technicianAuthForm');
+
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', togglePasswordVisibility);
+        }
+
+        if (authBtn) {
+            authBtn.addEventListener('click', authenticateTechnicianAsStockController);
+            authBtn.innerHTML = '<i class="fas fa-user-check me-1"></i> Verify & Continue';
+        }
+
+        if (technicianSelect) {
+            technicianSelect.addEventListener('change', handleTechnicianSelectChange);
+        }
+
+        if (passwordInput) {
+            passwordInput.addEventListener('input', updateAuthButtonState);
+            passwordInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    authenticateTechnicianAsStockController();
+                }
+            });
+        }
+
+        if (confirmCheckbox) {
+            confirmCheckbox.addEventListener('change', function() {
+                const submitBtn = document.getElementById('submitBatchBtn');
+                if (submitBtn) {
+                    submitBtn.disabled = !(this.checked && isTechnicianAuthenticated);
+                }
+            });
+        }
+
+        if (backToAuthBtn) {
+            backToAuthBtn.addEventListener('click', function() {
+                showAuthenticationSection();
+                // Clear password field but keep technician selection
+                const passwordInput = document.getElementById('technicianPassword');
+                const authStatus = document.getElementById('authStatus');
+                if (passwordInput) passwordInput.value = '';
+                if (authStatus) authStatus.innerHTML = '';
+            });
+        }
+
+        if (technicianAuthForm) {
+            technicianAuthForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                authenticateTechnicianAsStockController();
+            });
+        }
+    }
+
+
+    function showAuthenticationSection() {
+        document.getElementById('authenticationSection').classList.remove('d-none');
+        document.getElementById('batchFormSection').classList.add('d-none');
+    }
+
+    function showBatchFormSection() {
+        document.getElementById('authenticationSection').classList.add('d-none');
+        document.getElementById('batchFormSection').classList.remove('d-none');
+    }
+
+    function setupAuthEventListeners() {
+        const toggleBtn = document.getElementById('togglePassword');
+        const authBtn = document.getElementById('authenticateBtn');
+        const technicianSelect = document.getElementById('technicianSelect');
+        const passwordInput = document.getElementById('technicianPassword');
+        const confirmCheckbox = document.getElementById('confirmBatchSubmit');
+        const backToAuthBtn = document.getElementById('backToAuthBtn');
+        const technicianAuthForm = document.getElementById('technicianAuthForm');
+
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', togglePasswordVisibility);
+        }
+
+        if (authBtn) {
+            authBtn.addEventListener('click', authenticateTechnicianAsStockController);
+            authBtn.innerHTML = '<i class="fas fa-user-check me-1"></i> Verify & Continue';
+        }
+
+        if (technicianSelect) {
+            technicianSelect.addEventListener('change', handleTechnicianSelectChange);
+        }
+
+        if (passwordInput) {
+            passwordInput.addEventListener('input', updateAuthButtonState);
+            passwordInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    authenticateTechnicianAsStockController();
+                }
+            });
+        }
+
+        if (confirmCheckbox) {
+            confirmCheckbox.addEventListener('change', function() {
+                const submitBtn = document.getElementById('submitBatchBtn');
+                if (submitBtn) {
+                    submitBtn.disabled = !(this.checked && isTechnicianAuthenticated);
+                }
+            });
+        }
+
+        if (backToAuthBtn) {
+            backToAuthBtn.addEventListener('click', function() {
+                showAuthenticationSection();
+                // Clear password field but keep technician selection
+                document.getElementById('technicianPassword').value = '';
+                document.getElementById('authStatus').innerHTML = '';
+            });
+        }
+
+        if (technicianAuthForm) {
+            technicianAuthForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                authenticateTechnicianAsStockController();
+            });
+        }
+    }
+
+    async function authenticateTechnicianAsStockController() {
+        const technicianSelect = document.getElementById('technicianSelect');
+        const passwordInput = document.getElementById('technicianPassword');
+        const authStatus = document.getElementById('authStatus');
+
+        if (!technicianSelect || !passwordInput || !authStatus) {
+            showToast('error', 'Authentication elements not found');
+            return;
+        }
+
+        const technicianId = technicianSelect.value;
+        const password = passwordInput.value;
+
+        if (!technicianId) {
+            showToast('error', 'Please select a technician');
+            return;
+        }
+
+        if (!password) {
+            showToast('error', 'Please enter the technician\'s password');
+            return;
+        }
+
+        // Disable button during authentication
+        const authBtn = document.getElementById('authenticateBtn');
+        if (authBtn) {
+            authBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Verifying...';
+            authBtn.disabled = true;
+        }
+
+        try {
+            // Try real API first
+            const response = await fetch('api/technicians/verify_password.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    technician_id: technicianId,
+                    password: password
+                })
+            });
+
+            if (!response.ok) throw new Error('Server error');
+
+            const data = await response.json();
+
+            if (data.success && data.technician) {
+                handleSuccessfulAuthentication(data.technician);
+            } else {
+                handleFailedAuthentication(data.message || 'Invalid password. Please try again.');
+            }
+
+        } catch (error) {
+            console.error('❌ Authentication error:', error);
+            // Fall back to demo authentication
+            demoAuthenticateTechnician(technicianId, password);
+        } finally {
+            if (authBtn) {
+                authBtn.innerHTML = '<i class="fas fa-user-check me-1"></i> Verify & Continue';
+                authBtn.disabled = false;
+            }
+        }
+    }
+
+    function handleSuccessfulAuthentication(technicianData) {
+        authenticatedTechnician = {
+            id: technicianData.id,
+            username: technicianData.username,
+            full_name: technicianData.full_name,
+            department: technicianData.department || 'Not specified',
+            email: technicianData.email || '',
+            verified_at: new Date().toISOString()
+        };
+
+        // Save to sessionStorage
+        sessionStorage.setItem('authenticatedTechnician', JSON.stringify(authenticatedTechnician));
+        console.log('💾 Technician saved to sessionStorage:', authenticatedTechnician);
+
+        // Show success message
+        document.getElementById('authStatus').innerHTML =
+            '<div class="alert alert-success alert-sm mt-2 mb-0">' +
+            '<i class="fas fa-check-circle me-1"></i> ' +
+            'Technician verified successfully. Password is correct.' +
+            '</div>';
+
+        // Set technician name in confirmation
+        document.getElementById('confirmationTechnicianName').textContent = authenticatedTechnician.full_name;
+        document.getElementById('authenticatedTechnicianName').textContent = authenticatedTechnician.full_name;
+
+        // Fill requestedBy field
+        const requestedByField = document.getElementById('requestedBy');
+        if (requestedByField) {
+            requestedByField.value = authenticatedTechnician.full_name;
+        }
+
+        // Update modal data before showing form
+        updateBatchModalData();
+
+        // Show the batch form section after 1 second (to see success message)
+        setTimeout(() => {
+            showBatchFormSection();
+            isTechnicianAuthenticated = true;
+
+            // Enable form controls
+            document.getElementById('printPreviewBtn').disabled = false;
+            document.getElementById('confirmBatchSubmit').disabled = false;
+
+            // Auto-check confirmation
+            const confirmCheckbox = document.getElementById('confirmBatchSubmit');
+            if (confirmCheckbox && !confirmCheckbox.checked) {
+                confirmCheckbox.checked = true;
+                confirmCheckbox.dispatchEvent(new Event('change'));
+            }
+
+            showToast('success', `Verified: ${authenticatedTechnician.full_name} is authenticated`);
+        }, 1000);
+    }
+
+    function handleFailedAuthentication(message) {
+        isTechnicianAuthenticated = false;
+        authenticatedTechnician = null;
+
+        document.getElementById('authStatus').innerHTML =
+            '<div class="alert alert-danger alert-sm mt-2 mb-0">' +
+            '<i class="fas fa-times-circle me-1"></i> ' +
+            escapeHtml(message) +
+            '</div>';
+
+        // Clear password field
+        document.getElementById('technicianPassword').value = '';
+        document.getElementById('technicianPassword').focus();
+
+        showToast('error', 'Authentication failed');
+    }
+
+    function demoAuthenticateTechnician(technicianId, password) {
+        console.log('⚠️ Using demo authentication mode');
+
+        const demoTechnicians = {
+            '1': {
+                password: 'raul123',
+                full_name: 'Kayonga Raul'
+            },
+            '2': {
+                password: 'irene123',
+                full_name: 'Mudacumura Irene'
+            },
+            '3': {
+                password: 'aubin123',
+                full_name: 'Hirwa Aubin'
+            },
+            '4': {
+                password: 'val123',
+                full_name: 'Valentin'
+            }
+        };
+
+        const technician = demoTechnicians[technicianId];
+        const selectedOption = document.getElementById('technicianSelect').options[document.getElementById('technicianSelect').selectedIndex];
+
+        if (technician && password === technician.password) {
+            authenticatedTechnician = {
+                id: technicianId,
+                username: selectedOption.dataset.username,
+                full_name: selectedOption.dataset.fullname,
+                department: selectedOption.dataset.department,
+                email: selectedOption.dataset.email,
+                verified_at: new Date().toISOString()
+            };
+
+            // Same success flow as real authentication
+            handleSuccessfulAuthentication(authenticatedTechnician);
+        } else {
+            handleFailedAuthentication('Invalid password in demo mode');
+        }
+    }
+
+    function resetFormState() {
+        // Reset form fields to defaults
+        const defaultValues = {
+            'stockLocation': 'KCC',
+            'eventName': 'Hibiscus',
+            'jobSheet': 'JS-00254',
+            'projectManager': 'Hirwa Aubin',
+            'vehicleNumber': 'RAH 847',
+            'driverName': 'Valentin',
+            'batchLocation': 'KCC',
+            'batchNotes': '',
+            'approvalNotes': ''
+        };
+
+        Object.keys(defaultValues).forEach(fieldId => {
+            const element = document.getElementById(fieldId);
+            if (element) {
+                if (element.tagName === 'SELECT') {
+                    element.value = defaultValues[fieldId];
+                } else {
+                    element.value = defaultValues[fieldId];
+                }
+            }
+        });
+
+        // Reset confirmation checkbox
+        const confirmCheckbox = document.getElementById('confirmBatchSubmit');
+        if (confirmCheckbox) {
+            confirmCheckbox.checked = false;
+            confirmCheckbox.disabled = true;
+        }
+
+        // Disable submit button
+        const submitBtn = document.getElementById('submitBatchBtn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-lock me-1"></i> Awaiting Authentication';
+        }
+    }
+
+    function resetTechnicianAuthentication() {
+        console.log('🔓 Resetting technician authentication');
+
+        // Clear authentication data
+        isTechnicianAuthenticated = false;
+        authenticatedTechnician = null;
+        sessionStorage.removeItem('authenticatedTechnician');
+
+        // Reset UI
+        showAuthenticationSection();
+
+        // Clear form fields
+        document.getElementById('technicianSelect').selectedIndex = 0;
+        document.getElementById('technicianPassword').value = '';
+        document.getElementById('authStatus').innerHTML = '';
+        document.getElementById('authTechnicianInfo').classList.add('d-none');
+
+        // Reset batch form state
+        resetFormState();
+    }
+
+    // Update the modal shown event to handle restoring authentication
+    document.getElementById('batchSubmitModal')?.addEventListener('shown.bs.modal', function(event) {
+        console.log('Modal shown, checking for saved authentication...');
+
+        // Check if we already have an authenticated technician
+        const savedTech = sessionStorage.getItem('authenticatedTechnician');
+        if (savedTech) {
+            try {
+                authenticatedTechnician = JSON.parse(savedTech);
+                isTechnicianAuthenticated = true;
+                console.log('🔍 Restored technician from sessionStorage:', authenticatedTechnician);
+
+                // Skip authentication, show batch form directly
+                updateBatchModalData();
+                showBatchFormSection();
+
+                // Update UI with restored technician
+                if (authenticatedTechnician) {
+                    document.getElementById('authenticatedTechnicianName').textContent = authenticatedTechnician.full_name;
+                    document.getElementById('confirmationTechnicianName').textContent = authenticatedTechnician.full_name;
+
+                    const requestedByField = document.getElementById('requestedBy');
+                    if (requestedByField) {
+                        requestedByField.value = authenticatedTechnician.full_name;
+                    }
+
+                    // Enable form controls
+                    document.getElementById('printPreviewBtn').disabled = false;
+                    document.getElementById('confirmBatchSubmit').disabled = false;
+
+                    // Auto-check confirmation
+                    const confirmCheckbox = document.getElementById('confirmBatchSubmit');
+                    if (confirmCheckbox && !confirmCheckbox.checked) {
+                        confirmCheckbox.checked = true;
+                        confirmCheckbox.dispatchEvent(new Event('change'));
+                    }
+
+                    showToast('info', 'Using previously authenticated technician');
+                }
+            } catch (e) {
+                console.error('Error restoring technician:', e);
+                initializeTechnicianAuthentication();
+            }
+        } else {
+            // No saved authentication, start fresh
+            initializeTechnicianAuthentication();
+        }
+    });
+
+    // Update the modal hidden event
+    document.getElementById('batchSubmitModal')?.addEventListener('hidden.bs.modal', function(event) {
+        console.log('Modal hidden...');
+
+        // Only reset if not submitting
+        if (!isSubmitting) {
+            console.log('Not submitting, resetting authentication...');
+            resetTechnicianAuthentication();
+        } else {
+            console.log('Submission in progress, keeping authentication data');
+        }
+    });
+
+    // Update the updateAuthButtonState function
+    function updateAuthButtonState() {
+        const technicianSelect = document.getElementById('technicianSelect');
+        const passwordInput = document.getElementById('technicianPassword');
+        const authBtn = document.getElementById('authenticateBtn');
+
+        if (!technicianSelect || !passwordInput || !authBtn) return;
+
+        const technician = technicianSelect.value;
+        const password = passwordInput.value;
+        authBtn.disabled = !(technician && password.length > 0);
+    }
+
+
 
     function setStockControllerName() {
         // Get stock controller name from PHP session (set in your main page)
@@ -2425,29 +3264,163 @@ if (!file_exists($libraryPath)) {
     async function loadTechniciansForStockController() {
         console.log('👨‍🔧 Loading technicians for stock controller selection...');
 
+        const technicianSelect = document.getElementById('technicianSelect');
+        if (!technicianSelect) {
+            console.error('❌ technicianSelect element not found');
+            return;
+        }
+
+        // Show loading state
+        technicianSelect.innerHTML = '<option value="">Loading technicians...</option>';
+        technicianSelect.disabled = true;
+
         try {
-            const response = await fetch('api/technicians/get_all.php');
-            if (!response.ok) throw new Error('Failed to fetch technicians');
+            // Try multiple API endpoints
+            const apiEndpoints = [
+                'api/technicians/get_all.php',
+                'api/users/get_technicians.php',
+                'api/users/get_all.php?role=technician'
+            ];
 
-            const data = await response.json();
+            let response = null;
+            let data = null;
 
-            if (data.success && data.technicians) {
-                // Also get stock controller info if returned
+            for (const endpoint of apiEndpoints) {
+                try {
+                    console.log(`Trying endpoint: ${endpoint}`);
+                    response = await fetch(endpoint);
+
+                    if (response.ok) {
+                        const responseText = await response.text();
+                        console.log(`Response from ${endpoint}:`, responseText.substring(0, 500));
+
+                        try {
+                            data = JSON.parse(responseText);
+                            console.log(`✅ Successfully parsed JSON from ${endpoint}`);
+                            break; // Exit loop if successful
+                        } catch (parseError) {
+                            console.log(`❌ Failed to parse JSON from ${endpoint}:`, parseError);
+                            continue; // Try next endpoint
+                        }
+                    }
+                } catch (fetchError) {
+                    console.log(`❌ Fetch failed for ${endpoint}:`, fetchError.message);
+                    continue;
+                }
+            }
+
+            if (!data) {
+                throw new Error('All API endpoints failed');
+            }
+
+            console.log('📊 API Response data:', data);
+
+            if (data.success && data.technicians && Array.isArray(data.technicians)) {
+                console.log(`✅ Found ${data.technicians.length} technicians`);
+                populateTechnicianDropdownForStockController(data.technicians);
+
+                // Also log stock controller info if available
                 if (data.stock_controller) {
-                    console.log('📋 Stock Controller:', data.stock_controller);
-                    // Optionally store this for later use
+                    console.log('📋 Stock Controller Info:', data.stock_controller);
                     window.stockController = data.stock_controller;
                 }
 
-                populateTechnicianDropdownForStockController(data.technicians);
+            } else if (Array.isArray(data)) {
+                // If API returns array directly
+                console.log(`✅ Found ${data.length} technicians (direct array)`);
+                populateTechnicianDropdownForStockController(data);
+
             } else {
-                console.warn('⚠️ No technicians data or API error:', data.message);
-                useFallbackTechnicians();
+                console.warn('⚠️ Unexpected API response structure:', data);
+                throw new Error(data.message || 'Invalid response format');
             }
+
         } catch (error) {
             console.error('❌ Error loading technicians:', error);
-            useFallbackTechnicians();
+
+            // Show error in dropdown
+            technicianSelect.innerHTML = `
+            <option value="">Error loading technicians</option>
+            <option value="demo_1">Demo: Kayonga Raul - Technical</option>
+            <option value="demo_2">Demo: Mudacumura Irene - Operations</option>
+        `;
+            technicianSelect.disabled = false;
+
+            showNotification('warning', 'Could not load technicians from database. Using demo data.');
         }
+    }
+
+    function populateTechnicianDropdownForStockController(technicians) {
+        const select = document.getElementById('technicianSelect');
+        if (!select) {
+            console.error('❌ technicianSelect element not found in populate function');
+            return;
+        }
+
+        // Clear existing options
+        select.innerHTML = '';
+
+        // Add default option
+        const defaultOption = document.createElement('option');
+        defaultOption.value = "";
+        defaultOption.textContent = "-- Select Technician --";
+        defaultOption.disabled = true;
+        defaultOption.selected = true;
+        select.appendChild(defaultOption);
+
+        if (!technicians || !Array.isArray(technicians) || technicians.length === 0) {
+            console.warn('⚠️ No technicians provided or empty array');
+            const noDataOption = document.createElement('option');
+            noDataOption.value = "";
+            noDataOption.textContent = "No technicians found in database";
+            noDataOption.disabled = true;
+            select.appendChild(noDataOption);
+            select.disabled = false;
+            return;
+        }
+
+        console.log(`Populating dropdown with ${technicians.length} technicians`);
+
+        // Sort technicians by full name
+        const sortedTechnicians = [...technicians].sort((a, b) => {
+            const nameA = (a.full_name || a.username || '').toUpperCase();
+            const nameB = (b.full_name || b.username || '').toUpperCase();
+            return nameA.localeCompare(nameB);
+        });
+
+        // Add technician options
+        sortedTechnicians.forEach((tech, index) => {
+            const option = document.createElement('option');
+            option.value = tech.id || tech.username || `tech_${index}`;
+
+            // Build display text
+            let displayText = tech.full_name || tech.username || `Technician ${index + 1}`;
+
+            if (tech.department) {
+                displayText += ` - ${tech.department}`;
+            }
+
+            if (tech.role && tech.role !== 'technician') {
+                displayText += ` (${tech.role})`;
+            }
+
+            option.textContent = displayText;
+
+            // Set data attributes
+            option.dataset.username = tech.username || '';
+            option.dataset.fullname = tech.full_name || tech.username || '';
+            option.dataset.department = tech.department || '';
+            option.dataset.email = tech.email || '';
+            option.dataset.role = tech.role || 'technician';
+
+            select.appendChild(option);
+        });
+
+        select.disabled = false;
+        console.log('✅ Technician dropdown populated successfully');
+
+        // Update status
+        updateScannerStatus(`Loaded ${technicians.length} technicians`);
     }
 
     function populateTechnicianDropdownForStockController(technicians) {
@@ -2456,7 +3429,7 @@ if (!file_exists($libraryPath)) {
 
         select.innerHTML = '<option value="">-- Select Technician --</option>';
 
-        // Sort technicians alphabetically
+        // Sort technicians by name
         technicians.sort((a, b) => {
             const nameA = (a.full_name || a.username).toUpperCase();
             const nameB = (b.full_name || b.username).toUpperCase();
@@ -2465,15 +3438,15 @@ if (!file_exists($libraryPath)) {
 
         technicians.forEach(tech => {
             const option = document.createElement('option');
-            option.value = tech.id || tech.username;
+            option.value = tech.id;
 
-            // Create display text with all relevant info
+            // Create display text
             let displayText = tech.full_name || tech.username;
             if (tech.department) {
                 displayText += ` - ${tech.department}`;
             }
-            if (tech.position) {
-                displayText += ` (${tech.position})`;
+            if (tech.role && tech.role !== 'technician') {
+                displayText += ` (${tech.role})`;
             }
 
             option.textContent = displayText;
@@ -2481,6 +3454,7 @@ if (!file_exists($libraryPath)) {
             option.setAttribute('data-fullname', tech.full_name || tech.username);
             option.setAttribute('data-department', tech.department || '');
             option.setAttribute('data-email', tech.email || '');
+            option.setAttribute('data-role', tech.role || 'technician');
             select.appendChild(option);
         });
 

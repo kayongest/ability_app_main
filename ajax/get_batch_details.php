@@ -31,17 +31,24 @@ try {
     }
 
     // Get batch details from batch_scans table
+    // In ajax/get_batch_details.php, update the SQL query:
+
     $sql = "
         SELECT 
             bs.*,
             u1.full_name as submitted_by_fullname,
             u1.username as submitted_by_username,
+            u1.email as submitted_by_email,
+            u1.department as submitted_by_department,
+            u1.role as submitted_by_role,
             u2.full_name as requested_by_fullname,
             u2.username as requested_by_username,
             u2.department as technician_department,
             u2.email as technician_email,
+            u2.role as technician_role,
             u3.full_name as approved_by_fullname,
-            u3.username as approved_by_username
+            u3.username as approved_by_username,
+            u3.role as approved_by_role
         FROM batch_scans bs
         LEFT JOIN users u1 ON bs.submitted_by = u1.id
         LEFT JOIN users u2 ON bs.requested_by = u2.id

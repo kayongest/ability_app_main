@@ -1,54 +1,73 @@
 <?php
-header('Content-Type: application/json');
-require_once '../config/database.php';
+// api/technicians/verify_password.php
 session_start();
+header('Content-Type: application/json');
 
-// Check if user is logged in as stock controller
-if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'stock_controller') {
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-    exit;
-}
-
+// Get POST data
 $data = json_decode(file_get_contents('php://input'), true);
-$technicianId = $data['technician_id'] ?? '';
-$password = $data['password'] ?? '';
 
-if (empty($technicianId) || empty($password)) {
-    echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+if (!isset($data['technician_id']) || !isset($data['password'])) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Technician ID and password required'
+    ]);
     exit;
 }
+
+require_once '../../config/database.php';
+
+$conn = getConnection();
 
 try {
-    // Method 1: If you have hashed passwords (recommended)
-    $stmt = $pdo->prepare("SELECT id, username, full_name, department, email, position, password_hash FROM technicians WHERE (id = ? OR username = ?) AND active = 1");
-    $stmt->execute([$technicianId, $technicianId]);
-    $technician = $stmt->fetch(PDO::FETCH_ASSOC);
+    $technician_id = $conn->real_escape_string($data['technician_id']);
+    $password = $data['password'];
 
-    if ($technician && password_verify($password, $technician['password_hash'])) {
-        // Remove password hash from response
-        unset($technician['password_hash']);
+    // Get user from users table
+    $sql = "SELECT id, username, full_name, password, email, department, role, is_active 
+            FROM users 
+            WHERE (id = '$technician_id' OR username = '$technician_id') 
+              AND is_active = 1";
 
+    $result = $conn->query($sql);
+
+    if (!$result || $result->num_rows === 0) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Technician not found or inactive'
+        ]);
+        exit;
+    }
+
+    $user = $result->fetch_assoc();
+
+    // Verify password
+    if (password_verify($password, $user['password'])) {
+        // Password is correct
         echo json_encode([
             'success' => true,
-            'message' => 'Password verified',
-            'technician' => $technician
+            'message' => 'Authentication successful',
+            'technician' => [
+                'id' => $user['id'],
+                'username' => $user['username'],
+                'full_name' => $user['full_name'] ?? $user['username'],
+                'email' => $user['email'] ?? '',
+                'department' => $user['department'] ?? 'Not specified',
+                'role' => $user['role'] ?? 'technician',
+                'is_active' => $user['is_active']
+            ]
         ]);
     } else {
-        // Method 2: If you have plain text passwords (for testing)
-        $stmt = $pdo->prepare("SELECT id, username, full_name, department, email, position FROM technicians WHERE (id = ? OR username = ?) AND password = ? AND active = 1");
-        $stmt->execute([$technicianId, $technicianId, $password]);
-        $technician = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($technician) {
-            echo json_encode([
-                'success' => true,
-                'message' => 'Password verified (plain text)',
-                'technician' => $technician
-            ]);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Invalid technician ID or password']);
-        }
+        // Password incorrect
+        echo json_encode([
+            'success' => false,
+            'message' => 'Invalid password'
+        ]);
     }
-} catch (PDOException $e) {
-    echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+} catch (Exception $e) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Error: ' . $e->getMessage()
+    ]);
+} finally {
+    $conn->close();
 }
