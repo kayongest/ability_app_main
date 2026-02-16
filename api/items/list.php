@@ -1,5 +1,5 @@
 <?php
-// api/items/list.php - FIXED VERSION
+// api/items/list.php - ENHANCED SEARCH VERSION
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET');
@@ -15,6 +15,9 @@ try {
     $order = isset($_GET['order']) ? $_GET['order'] : 'desc';
     $search = isset($_GET['search']) ? $_GET['search'] : '';
     $category = isset($_GET['category']) ? $_GET['category'] : '';
+    $status = isset($_GET['status']) ? $_GET['status'] : '';
+    $location = isset($_GET['location']) ? $_GET['location'] : '';
+    $condition = isset($_GET['condition']) ? $_GET['condition'] : '';
 
     // Validate parameters
     $page = max(1, $page);
@@ -22,7 +25,7 @@ try {
     $offset = ($page - 1) * $limit;
 
     // Allowed sort columns - UPDATED to match your database
-    $allowedSort = ['id', 'item_name', 'category', 'quantity', 'status', 'created_at'];
+    $allowedSort = ['id', 'item_name', 'category', 'quantity', 'status', 'created_at', 'stock_location'];
     $sort = in_array($sort, $allowedSort) ? $sort : 'id';
     $order = strtoupper($order) === 'ASC' ? 'ASC' : 'DESC';
 
@@ -33,25 +36,70 @@ try {
         throw new Exception('Database connection failed');
     }
 
-    // Build WHERE clause - UPDATED to use your actual column names
+    // Build WHERE clause - ENHANCED to search across all fields
     $whereConditions = [];
     $params = [];
     $types = "";
 
+    // Handle search across multiple fields
     if (!empty($search)) {
-        $whereConditions[] = "(item_name LIKE ? OR serial_number LIKE ? OR description LIKE ? OR brand LIKE ? OR model LIKE ?)";
-        $searchTerm = "%$search%";
-        $params[] = $searchTerm;
-        $params[] = $searchTerm;
-        $params[] = $searchTerm;
-        $params[] = $searchTerm;
-        $params[] = $searchTerm;
-        $types .= "sssss";
+        // Check if search is a number (could be ID)
+        if (is_numeric($search)) {
+            // If it's a number, also search in ID
+            $whereConditions[] = "(id = ? OR item_name LIKE ? OR serial_number LIKE ? OR description LIKE ? OR brand LIKE ? OR model LIKE ? OR category LIKE ? OR status LIKE ? OR stock_location LIKE ?)";
+            $searchTermNumber = (int)$search;
+            $searchTermWildcard = "%$search%";
+            $params[] = $searchTermNumber;
+            $params[] = $searchTermWildcard;
+            $params[] = $searchTermWildcard;
+            $params[] = $searchTermWildcard;
+            $params[] = $searchTermWildcard;
+            $params[] = $searchTermWildcard;
+            $params[] = $searchTermWildcard;
+            $params[] = $searchTermWildcard;
+            $params[] = $searchTermWildcard;
+            $types .= "issssssss";
+        } else {
+            // Text search across all fields
+            $whereConditions[] = "(item_name LIKE ? OR serial_number LIKE ? OR description LIKE ? OR brand LIKE ? OR model LIKE ? OR category LIKE ? OR status LIKE ? OR stock_location LIKE ?)";
+            $searchTerm = "%$search%";
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $types .= "ssssssss";
+        }
     }
 
+    // Category filter
     if (!empty($category)) {
         $whereConditions[] = "category = ?";
         $params[] = $category;
+        $types .= "s";
+    }
+
+    // Status filter
+    if (!empty($status)) {
+        $whereConditions[] = "status = ?";
+        $params[] = $status;
+        $types .= "s";
+    }
+
+    // Location filter
+    if (!empty($location)) {
+        $whereConditions[] = "stock_location = ?";
+        $params[] = $location;
+        $types .= "s";
+    }
+
+    // Condition filter
+    if (!empty($condition)) {
+        $whereConditions[] = "`condition` = ?";
+        $params[] = $condition;
         $types .= "s";
     }
 
@@ -70,8 +118,19 @@ try {
     $totalItems = $countResult->fetch_assoc()['total'];
     $totalPages = $totalItems > 0 ? ceil($totalItems / $limit) : 1;
 
-    // Get items for current page - UPDATED to use correct column names
-    $query = "SELECT * FROM items $whereClause ORDER BY $sort $order LIMIT ? OFFSET ?";
+    // Get items for current page
+    $query = "
+    SELECT 
+        i.*,
+        c.name as category_name,
+        d.name as department_name
+    FROM items i
+    LEFT JOIN categories c ON i.category = c.id
+    LEFT JOIN departments d ON i.department = d.id
+    $whereClause 
+    ORDER BY $sort $order 
+    LIMIT ? OFFSET ?
+";
     $stmt = $db->prepare($query);
 
     // Add limit and offset to params
@@ -88,34 +147,70 @@ try {
     $stmt->execute();
     $result = $stmt->get_result();
 
-    $items = [];
-    while ($row = $result->fetch_assoc()) {
-        // Format the data for frontend - map to expected field names
-        $items[] = [
-            'id' => $row['id'],
-            'item_name' => $row['item_name'],
-            'serial_number' => $row['serial_number'],
-            'category' => $row['category'],
-            'brand' => $row['brand'],
-            'model' => $row['model'],
-            'brand_model' => $row['brand_model'],
-            'description' => $row['description'],
-            'status' => $row['status'],
-            'condition' => $row['condition'],
-            'stock_location' => $row['stock_location'],
-            'current_location' => $row['current_location'],
-            'quantity' => $row['quantity'],
-            'image' => $row['image'],
-            'qr_code' => $row['qr_code'],
-            'created_at' => $row['created_at'],
-            'updated_at' => $row['updated_at']
-        ];
+    // Inside api/items/list.php, modify your query to join with categories and departments tables
+
+    // Get items for current page - WITH JOINS
+    $query = "
+    SELECT 
+        i.*,
+        c.name as category_name,
+        d.name as department_name
+    FROM items i
+    LEFT JOIN categories c ON i.category = c.id
+    LEFT JOIN departments d ON i.department = d.id
+    $whereClause 
+    ORDER BY $sort $order 
+    LIMIT ? OFFSET ?
+";
+    $stmt = $db->prepare($query);
+
+    // ... rest of your binding and execution code
+
+    // Inside your item fetching loop
+    // Inside your item fetching loop
+$items = [];
+while ($row = $result->fetch_assoc()) {
+    // Keep original values
+    $row['category_id'] = $row['category'];  // Keep the ID
+    $row['department_id'] = $row['department']; // Keep the ID
+    
+    // Use the joined names with fallbacks
+    $row['category_name'] = $row['category_name'] ?: 'Uncategorized';
+    $row['department_name'] = $row['department_name'] ?: 'Not Set';
+    
+    // Clean up "undefined" strings
+    $fieldsToCheck = ['description', 'specifications', 'notes', 'brand', 'model', 'tags'];
+    foreach ($fieldsToCheck as $field) {
+        if (isset($row[$field]) && ($row[$field] === 'undefined' || $row[$field] === 'null')) {
+            $row[$field] = '';
+        }
+    }
+    
+    // Fetch accessories for this item
+    $accStmt = $db->prepare("
+        SELECT a.name 
+        FROM accessories a
+        JOIN item_accessories ia ON a.id = ia.accessory_id
+        WHERE ia.item_id = ?
+    ");
+    $accStmt->bind_param("i", $row['id']);
+    $accStmt->execute();
+    $accResult = $accStmt->get_result();
+
+    $accessories = [];
+    while ($acc = $accResult->fetch_assoc()) {
+        $accessories[] = $acc['name'];
     }
 
-    // Return response - NOTE: using 'items' not 'data' to match frontend
+    // Add accessories to the row data
+    $row['accessories'] = $accessories;
+    $items[] = $row;
+}
+
+    // Return response
     echo json_encode([
         'success' => true,
-        'items' => $items,  // Changed from 'data' to 'items'
+        'items' => $items,
         'pagination' => [
             'currentPage' => $page,
             'totalPages' => $totalPages,
@@ -127,11 +222,13 @@ try {
         'filters' => [
             'search' => $search,
             'category' => $category,
+            'status' => $status,
+            'location' => $location,
+            'condition' => $condition,
             'sort' => $sort,
             'order' => $order
         ]
     ]);
-    
 } catch (Exception $e) {
     error_log("Items API Error: " . $e->getMessage());
     http_response_code(500);
@@ -140,4 +237,3 @@ try {
         'error' => $e->getMessage()
     ]);
 }
-?>

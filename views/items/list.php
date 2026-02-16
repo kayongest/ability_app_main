@@ -426,7 +426,7 @@ require_once '../partials/header.php';
                     render: function(data, type, row) {
                         const checked = selectedItems.has(row.id.toString()) ? 'checked' : '';
                         return `<input type="checkbox" class="form-check-input item-checkbox" 
-                                    value="${row.id}" onchange="toggleSelectItem(this, ${row.id})" ${checked}>`;
+                        value="${row.id}" onchange="toggleSelectItem(this, ${row.id})" ${checked}>`;
                     }
                 },
                 {
@@ -447,6 +447,12 @@ require_once '../partials/header.php';
                     data: 'item_name',
                     render: function(data, type, row) {
                         let html = `<strong>${escapeHTML(data || 'Unnamed')}</strong>`;
+
+                        // Only show description if it exists and is not null/undefined
+                        if (row.description && row.description !== 'null' && row.description !== 'undefined' && row.description.trim() !== '') {
+                            html += `<br><small class="text-muted">${escapeHTML(row.description.substring(0, 50))}${row.description.length > 50 ? '...' : ''}</small>`;
+                        }
+
                         if (row.brand || row.model) {
                             html += `<br><small class="text-muted">${escapeHTML(row.brand || '')} ${escapeHTML(row.model || '')}</small>`;
                         }
@@ -463,7 +469,16 @@ require_once '../partials/header.php';
                     }
                 },
                 {
-                    data: 'category'
+                    data: 'category',
+                    render: function(data, type, row) {
+                        // If category is a number, try to map it to a name
+                        if (data && !isNaN(data)) {
+                            // You can create a category map or fetch from API
+                            // For now, just show "Category " + id
+                            return `Category ${data}`;
+                        }
+                        return escapeHTML(data || 'N/A');
+                    }
                 },
                 {
                     data: 'status',
@@ -498,18 +513,18 @@ require_once '../partials/header.php';
                     searchable: false,
                     render: function(data, type, row) {
                         return `
-                            <div class="action-buttons">
-                                <a href="items.php?action=view&id=${row.id}" class="btn btn-sm btn-info" title="View Details">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="items.php?action=edit&id=${row.id}" class="btn btn-sm btn-warning" title="Edit">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <button class="btn btn-sm btn-danger" onclick="confirmDelete(${row.id}, '${escapeHTML(row.item_name || 'this item')}')" title="Delete">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        `;
+                <div class="action-buttons">
+                    <a href="items.php?action=view&id=${row.id}" class="btn btn-sm btn-info" title="View Details">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    <a href="items.php?action=edit&id=${row.id}" class="btn btn-sm btn-warning" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <button class="btn btn-sm btn-danger" onclick="confirmDelete(${row.id}, '${escapeHTML(row.item_name || 'this item')}')" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
                     }
                 }
             ],

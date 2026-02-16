@@ -493,7 +493,7 @@ require_once 'assets/css/chart.css';
                     <div class="row align-items-center">
                         <div class="col-md-8">
                             <div class="d-flex align-items-center mb-3 mb-md-0">
-                                
+
                                 <div class="flex-grow-1">
                                     <h4 class="text-white mb-1 fw-bold">Quick Inventory Search</h4>
                                     <p class="text-white-50 mb-0" style="opacity: 0.85;">
@@ -601,7 +601,7 @@ require_once 'assets/css/chart.css';
             <div class="modal fade" id="quickSearchModal" tabindex="-1" aria-labelledby="quickSearchModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-lg">
                     <div class="modal-content">
-                        <div class="modal-header text-white" style="background-color: #1f5e4f;">
+                        <div class="modal-header text-white" style="background-color: #1e3b58;">
                             <h5 class="modal-title" id="quickSearchModalLabel">
                                 <i class="fas fa-search me-2"></i>Quick Inventory Search
                             </h5>
@@ -1528,29 +1528,6 @@ require_once 'assets/css/chart.css';
             ?>
         </div>
     </div>
-    <!-- <div class="col-md-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 d-flex justify-content-between align-items-center text-white" style="background-color: rgba(35, 54, 67, 1);">
-                    <h6 class="m-0 font-weight-bold">
-                        <i class="fas fa-chart-pie me-2"></i>Equipment Status Distribution
-                    </h6>
-                    <button class="btn btn-sm btn-outline-light" onclick="refreshStatusChart()" title="Refresh Chart">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div class="chart-container" style="position: relative; height: 300px;">
-                        <canvas id="statusChart"></canvas>
-                    </div>
-                    <div class="text-center mt-3">
-                        <small class="text-muted">
-                            <i class="fas fa-info-circle me-1"></i>
-                            Total Equipment: <span id="totalEquipmentCount"><?php echo $stats['total_items'] ?? 0; ?></span>
-                        </small>
-                    </div>
-                </div>
-            </div>
-        </div> -->
 
 </div>
 
@@ -1599,10 +1576,10 @@ require_once 'assets/css/chart.css';
                                 <th>Item Name</th>
                                 <th>Serial #</th>
                                 <th>Category</th>
-                                <th>Accessories</th>
-                                <th>Brand</th>
-                                <th>Model</th>
                                 <th>Department</th>
+                                <th>Accessories</th>
+                                <th>Model</th>
+                                <th>Brand</th>
                                 <th>Location</th>
                                 <th>Condition</th>
                                 <th>Status</th>
@@ -1775,7 +1752,6 @@ require_once 'assets/css/chart.css';
     </div>
 </div>
 
-</div>
 
 <!-- Add Item Modal -->
 <div class="modal fade" id="addItemModal" tabindex="-1" aria-labelledby="addItemModalLabel" aria-hidden="true">
@@ -2096,46 +2072,7 @@ require_once 'assets/css/chart.css';
                             </div>
 
                             <!-- Details Table - FIXED: Change all view-* IDs to qv-* IDs -->
-                            <table class="table table-sm table-borderless">
-                                <tbody>
-                                    <tr>
-                                        <th width="35%" class="text-muted">Serial Number:</th>
-                                        <td id="qvItemSerial" class="fw-bold"></td> <!-- CHANGED from viewSerialNumber -->
-                                    </tr>
-                                    <tr>
-                                        <th class="text-muted">Brand:</th>
-                                        <td id="qvItemBrand"></td> <!-- CHANGED from viewBrand -->
-                                    </tr>
-                                    <tr>
-                                        <th class="text-muted">Model:</th>
-                                        <td id="qvItemModel"></td> <!-- CHANGED from viewModel -->
-                                    </tr>
-                                    <tr>
-                                        <th class="text-muted">Department:</th>
-                                        <td id="qvItemDepartment"></td> <!-- CHANGED from viewDepartment -->
-                                    </tr>
-                                    <tr>
-                                        <th class="text-muted">Stock Location:</th>
-                                        <td id="qvItemLocation"></td> <!-- CHANGED from viewStockLocation -->
-                                    </tr>
-                                    <tr>
-                                        <th class="text-muted">Storage Location:</th>
-                                        <td id="qvItemStorageLocation"></td> <!-- ADD THIS -->
-                                    </tr>
-                                    <tr>
-                                        <th class="text-muted">Accessories:</th>
-                                        <td id="qvItemAccessories"></td> <!-- CHANGED from viewAccessoriesList -->
-                                    </tr>
-                                    <tr>
-                                        <th class="text-muted">Created:</th>
-                                        <td id="qvItemCreatedAt"></td> <!-- CHANGED from viewCreatedAt -->
-                                    </tr>
-                                    <tr>
-                                        <th class="text-muted">Last Updated:</th>
-                                        <td id="qvItemUpdatedAt"></td> <!-- CHANGED from viewUpdatedAt -->
-                                    </tr>
-                                </tbody>
-                            </table>
+
                         </div>
                     </div>
 
@@ -2203,7 +2140,6 @@ require_once 'assets/css/chart.css';
         </div>
     </div>
 </div>
-
 
 <!-- View Item Details Modal -->
 <div class="modal fade" id="viewItemModal" tabindex="-1" aria-labelledby="viewItemModalLabel" aria-hidden="true">
@@ -2324,17 +2260,17 @@ require_once 'assets/css/chart.css';
                         </div>
 
                         <!-- Specifications Section -->
-                        <div class="card border-light mt-3" id="viewSpecificationsSection" style="display: none;">
+                        <!-- <div class="card border-light mt-3" id="viewSpecificationsSection" style="display: none;">
                             <div class="card-header bg-light py-2">
                                 <i class="fas fa-microchip me-2"></i>Specifications
                             </div>
                             <div class="card-body p-3">
                                 <div id="viewSpecifications" class="text-muted"></div>
                             </div>
-                        </div>
+                        </div> -->
 
                         <!-- Description -->
-                        <div class="card border-light mt-3">
+                        <!-- <div class="card border-light mt-3">
                             <div class="card-header bg-light py-2">
                                 <i class="fas fa-align-left me-2"></i>Description
                             </div>
@@ -2343,40 +2279,40 @@ require_once 'assets/css/chart.css';
                                     No description available
                                 </div>
                             </div>
-                        </div>
+                        </div> -->
 
                         <!-- Notes -->
-                        <div class="card border-warning mt-3" id="viewNotesSection" style="display: none;">
+                        <!-- <div class="card border-warning mt-3" id="viewNotesSection" style="display: none;">
                             <div class="card-header bg-warning text-dark py-2">
                                 <i class="fas fa-sticky-note me-2"></i>Notes
                             </div>
                             <div class="card-body p-3">
                                 <div id="viewNotes" class="text-muted"></div>
                             </div>
-                        </div>
+                        </div> -->
 
                         <!-- Accessories Section -->
-                        <div class="card border-info mt-3" id="viewAccessoriesSection" style="display: none;">
+                        <!-- <div class="card border-info mt-3" id="viewAccessoriesSection" style="display: none;">
                             <div class="card-header bg-info text-white py-2">
                                 <i class="fas fa-puzzle-piece me-2"></i>Accessories
                             </div>
                             <div class="card-body p-3">
                                 <div id="viewAccessoriesList" class="d-flex flex-wrap gap-1"></div>
                             </div>
-                        </div>
+                        </div> -->
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                <button type="button" class="btn btn-" style="background:rgba(201, 58, 53, 0.4)" data-bs-dismiss="modal">
                     <i class="fas fa-times me-1"></i> Close
                 </button>
-                <button type="button" class="btn btn-outline-primary" id="viewRefreshBtn">
+                <!-- <button type="button" class="btn btn-outline-primary" id="viewRefreshBtn">
                     <i class="fas fa-sync-alt me-1"></i> Refresh
                 </button>
                 <button type="button" class="btn btn-primary" id="viewEditBtn">
                     <i class="fas fa-edit me-1"></i> Edit Item
-                </button>
+                </button> -->
             </div>
         </div>
     </div>
@@ -2386,7 +2322,7 @@ require_once 'assets/css/chart.css';
 <div class="modal fade" id="editItemModal" tabindex="-1" aria-labelledby="editItemModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
-            <div class="modal-header text-white" style="background-color: #1f5e4f;">
+            <div class="modal-header text-white" style="background-color: #1f4d5e;">
                 <h5 class="modal-title" id="editItemModalLabel">
                     <i class="fas fa-edit me-2"></i>Edit Equipment
                 </h5>
@@ -2535,7 +2471,7 @@ require_once 'assets/css/chart.css';
                             </div>
 
                             <!-- SECTION 4: Notes & Tags -->
-                            <h6 class="fw-bold mt-4 mb-2" style="color: #1f5e4f;">NOTES & TAGS</h6>
+                            <!-- <h6 class="fw-bold mt-4 mb-2" style="color: #1f5e4f;">NOTES & TAGS</h6>
                             <hr class="mt-0 mb-3" style="border-color: #1f5e4f; opacity: 0.3;">
 
                             <div class="row">
@@ -2551,34 +2487,10 @@ require_once 'assets/css/chart.css';
                                         <input type="text" class="form-control form-control-sm" id="editTags" name="tags" placeholder="comma separated">
                                     </div>
                                 </div>
-                            </div>
+                            </div> -->
 
                             <!-- SECTION 5: Accessories (THIS IS A CARD - as requested) -->
-                            <h6 class="fw-bold mt-4 mb-2" style="color: #1f5e4f;">ACCESSORIES</h6>
-                            <hr class="mt-0 mb-3" style="border-color: #1f5e4f; opacity: 0.3;">
 
-                            <!-- This is the CARD for accessories -->
-                            <div class="card border-info">
-                                <div class="card-header bg-info text-white py-1">
-                                    <small><i class="fas fa-puzzle-piece me-1"></i> Accessories</small>
-                                </div>
-                                <div class="card-body py-2">
-                                    <div class="row">
-                                        <div class="col-md-8">
-                                            <select class="form-select form-select-sm" id="editAccessories" name="accessories[]" multiple size="4">
-                                                <option value="">-- No Accessories --</option>
-                                            </select>
-                                            <small class="text-muted">Hold Ctrl to select multiple</small>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <small class="fw-bold">Selected:</small>
-                                            <div id="editSelectedAccessories" class="border rounded p-1 bg-light" style="min-height: 80px; max-height: 80px; overflow-y: auto; font-size: 0.8rem;">
-                                                <p class="text-muted mb-0">None</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
 
                             <!-- Spacer -->
                             <div class="mb-3"></div>
@@ -2587,8 +2499,8 @@ require_once 'assets/css/chart.css';
                         <!-- ========== RIGHT COLUMN - QR CODE CARD ========== -->
                         <div class="col-md-5">
                             <!-- QR Code Card -->
-                            <div class="card border-info">
-                                <div class="card-header bg-info text-white text-center py-2">
+                            <div class="card border-dark">
+                                <div class="card-header bg- text-white text-center py-2" style="background-color: #1f4d5e;">
                                     <i class="fas fa-qrcode me-1"></i> QR CODE
                                 </div>
                                 <div class="card-body text-center py-3">
@@ -2617,18 +2529,43 @@ require_once 'assets/css/chart.css';
                                     </div>
                                 </div>
                             </div>
+                            <h6 class="fw-bold mt-4 mb-2" style="color: #1f5e4f;">ACCESSORIES</h6>
+                            <hr class="mt-0 mb-3" style="border-color: #1f5e4f; opacity: 0.3;">
+
+                            <!-- This is the CARD for accessories -->
+                            <div class="card border-info">
+                                <div class="card-header bg-info text-white py-1">
+                                    <small><i class="fas fa-puzzle-piece me-1"></i> Accessories</small>
+                                </div>
+                                <div class="card-body py-2">
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                            <select class="form-select form-select-sm" id="editAccessories" name="accessories[]" multiple size="4">
+                                                <option value="">-- No Accessories --</option>
+                                            </select>
+                                            <small class="text-muted">Hold Ctrl to select multiple</small>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <small class="fw-bold">Selected:</small>
+                                            <div id="editSelectedAccessories" class="border rounded p-1 bg-light" style="min-height: 80px; max-height: 80px; overflow-y: auto; font-size: 0.8rem;">
+                                                <p class="text-muted mb-0">None</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Footer -->
                 <div class="modal-footer py-2">
-                    <button type="button" class="btn btn-sm btn-outline-danger" id="editDeleteBtn">
+                    <!-- <button type="button" class="btn btn-sm btn-outline-danger" id="editDeleteBtn">
                         <i class="fas fa-trash me-1"></i> Delete
                     </button>
                     <button type="reset" class="btn btn-sm btn-outline-secondary" id="editResetBtn">
                         <i class="fas fa-undo me-1"></i> Reset
-                    </button>
+                    </button> -->
                     <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
                         <i class="fas fa-times me-1"></i> Cancel
                     </button>
@@ -2669,13 +2606,148 @@ require_once 'views/partials/footer.php';
     let totalPages = 1;
     let totalItems = 0;
     let itemsPerPage = 5;
+
+    // Add this near the top of your script, after your global variables
+    const categoryMap = {
+        '0': 'Uncategorized',
+        '1': 'CAMERA - ROBOTIC',
+        '2': 'Audio Equipment',
+        '3': 'Video Equipment',
+        '4': 'Lighting',
+        '5': 'Accessories',
+        // Add more as you discover them
+    };
+
+    const departmentMap = {
+        '0': 'Not Assigned',
+        '1': 'Audio Department',
+        '2': 'Video Department',
+        '3': 'Production',
+        '4': 'Post-Production',
+        '5': 'Maintenance',
+        // Add more as you discover them
+    };
+
+    // Helper function to get all unique categories/departments from your data
+    function discoverMappings() {
+        $.get('api/items/list.php?limit=1000', function(data) {
+            if (data.success && data.items) {
+                const categories = new Set();
+                const departments = new Set();
+
+                data.items.forEach(item => {
+                    if (item.category) categories.add(item.category);
+                    if (item.department) departments.add(item.department);
+                });
+
+                console.log('Found categories:', Array.from(categories));
+                console.log('Found departments:', Array.from(departments));
+            }
+        });
+    }
+
+    // Run this once to discover your actual values
+    discoverMappings();
+
+
+    // Add BASE_URL - make sure this matches your actual base URL
+    const BASE_URL = '<?php echo BASE_URL ?? "/ability_app_main/"; ?>';
+
     // ========== QUICK SEARCH FUNCTIONS ==========
 
     let searchTimeout = null;
 
+    // Add this near the top of your file
+    $(document).ajaxError(function(event, jqxhr, settings, thrownError) {
+        console.error('AJAX Error:', {
+            url: settings.url,
+            status: jqxhr.status,
+            statusText: jqxhr.statusText,
+            responseText: jqxhr.responseText,
+            error: thrownError
+        });
+
+        // Don't show toastr for every error - only for user-triggered actions
+        if (settings.url && settings.url.includes('list.php')) {
+            // Silently log DataTable errors
+            return;
+        }
+
+        toastr.error(`Error loading data from ${settings.url}`);
+    });
+
+
+    // Load quick stats
+    function loadQuickStats() {
+        console.log('Loading quick stats...'); // Debug log
+
+        $.ajax({
+            url: 'api/get_dashboard_stats.php',
+            method: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                console.log('Stats response:', response); // Debug log
+
+                if (response.success && response.stats) {
+                    console.log('Stats data:', response.stats); // Debug log
+                    updateQuickStats(response.stats);
+                } else {
+                    console.log('No stats in response:', response);
+                    // Set default values
+                    updateQuickStats({
+                        total: 0,
+                        available: 0,
+                        in_use: 0,
+                        maintenance: 0,
+                        categories: []
+                    });
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Could not load stats:', error);
+                console.error('Response:', xhr.responseText);
+
+                // Set default values on error
+                updateQuickStats({
+                    total: 0,
+                    available: 0,
+                    in_use: 0,
+                    maintenance: 0,
+                    categories: []
+                });
+            }
+        });
+    }
+
+
+    // Update stats display
+    function updateQuickStats(stats) {
+        $('#totalItemsStat').text(stats.total || 0);
+        $('#availableStat').text(stats.available || 0);
+        $('#inUseStat').text(stats.in_use || 0);
+        $('#maintenanceStat').text(stats.maintenance || 0);
+
+        // Update categories
+        if (stats.categories && stats.categories.length > 0) {
+            let categoriesHtml = '';
+            stats.categories.forEach(cat => {
+                categoriesHtml += `
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>${escapeHtml(cat.category)}</span>
+                        <span class="badge bg-secondary rounded-pill">${cat.count}</span>
+                    </div>
+                `;
+            });
+            $('#popularCategories').html(categoriesHtml);
+        } else {
+            $('#popularCategories').html('<p class="text-muted small mb-0">No categories found</p>');
+        }
+    }
+
     // Initialize quick search when modal opens
     $('#quickSearchModal').on('show.bs.modal', function() {
         clearQuickSearch();
+        loadQuickStats(); // Load stats when modal opens
         setTimeout(() => $('#quickSearchInput').focus(), 300);
     });
 
@@ -2715,11 +2787,11 @@ require_once 'views/partials/footer.php';
         $('#quickStatsSection').hide();
         $('#quickSearchResults').show();
         $('#searchResultsContainer').html(`
-        <div class="text-center py-5">
-            <div class="spinner-border text-primary mb-3" role="status"></div>
-            <p class="text-muted">Searching...</p>
-        </div>
-    `);
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary mb-3" role="status"></div>
+                <p class="text-muted">Searching...</p>
+            </div>
+        `);
 
         // Make AJAX call
         $.ajax({
@@ -2730,27 +2802,34 @@ require_once 'views/partials/footer.php';
             },
             dataType: 'json',
             success: function(response) {
-                if (response.success && response.items && response.items.length > 0) {
-                    displaySearchResults(response.items);
-                    $('#searchResultCount').text(response.items.length);
-                } else {
-                    $('#searchResultCount').text('0');
-                    $('#searchResultsContainer').html(`
-                    <div class="text-center py-5 text-muted">
-                        <i class="fas fa-search fa-3x mb-3"></i>
-                        <h6>No items found</h6>
-                        <p class="small">Try different keywords</p>
-                    </div>
-                `);
+                if (response.success) {
+                    if (response.items && response.items.length > 0) {
+                        displaySearchResults(response.items);
+                        $('#searchResultCount').text(response.items.length);
+                    } else {
+                        $('#searchResultCount').text('0');
+                        $('#searchResultsContainer').html(`
+                            <div class="text-center py-5 text-muted">
+                                <i class="fas fa-search fa-3x mb-3"></i>
+                                <h6>No items found</h6>
+                                <p class="small">Try different keywords</p>
+                            </div>
+                        `);
+                    }
+
+                    // Update stats if provided
+                    if (response.stats) {
+                        updateQuickStats(response.stats);
+                    }
                 }
             },
             error: function() {
                 $('#searchResultsContainer').html(`
-                <div class="text-center py-5 text-danger">
-                    <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
-                    <p>Search failed. Please try again.</p>
-                </div>
-            `);
+                    <div class="text-center py-5 text-danger">
+                        <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                        <p>Search failed. Please try again.</p>
+                    </div>
+                `);
             }
         });
     }
@@ -2760,43 +2839,43 @@ require_once 'views/partials/footer.php';
         let html = '<div class="list-group">';
 
         items.forEach(item => {
-            const statusClass = `status-${item.status.toLowerCase()}`;
+            const statusClass = `status-${item.status ? item.status.toLowerCase() : 'unknown'}`;
 
             html += `
-            <div class="list-group-item list-group-item-action" onclick="quickViewItem(${item.id})" style="cursor: pointer;">
-                <div class="row align-items-center">
-                    <div class="col-md-8">
-                        <div class="d-flex align-items-center">
-                            ${item.image ? 
-                                `<img src="${item.image}" class="rounded me-2" style="width: 40px; height: 40px; object-fit: cover;">` : 
-                                `<div class="bg-light rounded me-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                    <i class="fas fa-box text-muted"></i>
-                                </div>`
-                            }
-                            <div>
-                                <strong class="d-block">${escapeHtml(item.item_name)}</strong>
-                                <small class="text-muted">
-                                    <i class="fas fa-barcode me-1"></i>${escapeHtml(item.serial_number || 'N/A')}
-                                </small>
+                <div class="list-group-item list-group-item-action" onclick="quickViewItem(${item.id})" style="cursor: pointer;">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="d-flex align-items-center">
+                                ${item.image ? 
+                                    `<img src="${item.image}" class="rounded me-2" style="width: 40px; height: 40px; object-fit: cover;">` : 
+                                    `<div class="bg-light rounded me-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                        <i class="fas fa-box text-muted"></i>
+                                    </div>`
+                                }
+                                <div>
+                                    <strong class="d-block">${escapeHtml(item.item_name)}</strong>
+                                    <small class="text-muted">
+                                        <i class="fas fa-barcode me-1"></i>${escapeHtml(item.serial_number || 'N/A')}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex justify-content-end align-items-center">
+                                <div class="text-end me-3">
+                                    <span class="status-badge ${statusClass}">${escapeHtml(item.status || 'Unknown')}</span>
+                                    <br>
+                                    <small class="text-muted">
+                                        <i class="fas fa-map-marker-alt me-1"></i>${escapeHtml(item.stock_location || 'N/A')}
+                                    </small>
+                                </div>
+                                <i class="fas fa-chevron-right text-muted"></i>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="d-flex justify-content-end align-items-center">
-                            <div class="text-end me-3">
-                                <span class="status-badge ${statusClass}">${escapeHtml(item.status)}</span>
-                                <br>
-                                <small class="text-muted">
-                                    <i class="fas fa-map-marker-alt me-1"></i>${escapeHtml(item.stock_location || 'N/A')}
-                                </small>
-                            </div>
-                            <i class="fas fa-chevron-right text-muted"></i>
-                        </div>
-                    </div>
+                    ${item.description ? `<small class="text-muted d-block mt-2">${escapeHtml(item.description.substring(0, 100))}${item.description.length > 100 ? '...' : ''}</small>` : ''}
                 </div>
-                ${item.description ? `<small class="text-muted d-block mt-2">${escapeHtml(item.description.substring(0, 100))}...</small>` : ''}
-            </div>
-        `;
+            `;
         });
 
         html += '</div>';
@@ -2822,17 +2901,19 @@ require_once 'views/partials/footer.php';
         $('#quickSearchInput').val('');
         $('#quickSearchResults').hide();
         $('#quickStatsSection').show();
+        loadQuickStats(); // Refresh stats when clearing
         if (searchTimeout) clearTimeout(searchTimeout);
     }
 
-    // Escape HTML helper
+    // Escape HTML helper (SINGLE DEFINITION)
     function escapeHtml(text) {
         if (!text) return '';
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
     }
-    // ========== HELPER FUNCTIONS (Defined first) ==========
+
+    // ========== HELPER FUNCTIONS ==========
 
     function formatDateTime(dt) {
         if (!dt) return 'N/A';
@@ -2851,37 +2932,109 @@ require_once 'views/partials/footer.php';
         }
     }
 
-    function escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
     // ========== FETCH DATA FUNCTIONS ==========
 
     function fetchItemData(itemId) {
         return new Promise(function(resolve, reject) {
+            console.log('========== FETCH ITEM DATA START ==========');
             console.log('Fetching item data for ID:', itemId);
+            console.log('Item ID type:', typeof itemId);
+            console.log('Item ID value:', itemId);
+
+            // Validate itemId
+            if (!itemId || isNaN(parseInt(itemId))) {
+                console.error('Invalid item ID:', itemId);
+                reject(new Error('Invalid item ID'));
+                return;
+            }
+
+            // Make sure itemId is a number
+            const numericId = parseInt(itemId);
+            console.log('Numeric ID:', numericId);
 
             $.ajax({
                 url: 'api/get_item.php',
                 method: 'GET',
                 data: {
-                    id: itemId
+                    id: numericId
                 },
                 dataType: 'json',
                 timeout: 10000,
+                beforeSend: function() {
+                    console.log('Sending AJAX request to api/get_item.php with ID:', numericId);
+                },
                 success: function(response) {
-                    console.log('API response received:', response);
-                    if (response.success && response.data) {
-                        resolve(response.data);
+                    console.log('✅ AJAX success - Raw response:', response);
+                    console.log('Response type:', typeof response);
+                    console.log('Response success flag:', response?.success);
+                    console.log('Response data:', response?.data);
+
+                    if (response && response.data) {
+                        console.log('Description in response:', response.data.description);
+                        console.log('Description type:', typeof response.data.description);
+                    }
+
+                    if (response && response.success === true && response.data) {
+                        const data = response.data;
+                        console.log('Processing data object:', data);
+
+                        // Log all keys in data
+                        console.log('Data keys:', Object.keys(data));
+
+                        // Check specifically for description
+                        console.log('description exists:', data.hasOwnProperty('description'));
+                        console.log('description value before cleanup:', data.description);
+                        console.log('description type before cleanup:', typeof data.description);
+
+                        // Clean up undefined/null values
+                        Object.keys(data).forEach(key => {
+                            const originalValue = data[key];
+                            if (data[key] === 'undefined' || data[key] === undefined || data[key] === null) {
+                                data[key] = '';
+                                console.log(`Cleaned up ${key}: ${originalValue} -> ''`);
+                            }
+                        });
+
+                        // Ensure description is a string
+                        if (!data.hasOwnProperty('description') || data.description === undefined || data.description === null) {
+                            console.log('description was missing or null, setting to empty string');
+                            data.description = '';
+                        }
+
+                        console.log('Final processed description:', data.description);
+                        console.log('Final processed description type:', typeof data.description);
+                        console.log('========== FETCH ITEM DATA END (SUCCESS) ==========');
+
+                        resolve(data);
                     } else {
-                        reject(new Error(response.message || 'Failed to load item'));
+                        const errorMsg = response?.message || 'Failed to load item';
+                        console.error('❌ API returned error:', errorMsg);
+                        console.log('Full error response:', response);
+                        console.log('========== FETCH ITEM DATA END (ERROR) ==========');
+                        reject(new Error(errorMsg));
                     }
                 },
                 error: function(xhr, status, error) {
-                    reject(new Error('Network error: ' + error));
+                    console.error('❌ AJAX error - Status:', status);
+                    console.error('Error:', error);
+                    console.error('XHR Response Text:', xhr.responseText);
+                    console.error('XHR Status:', xhr.status);
+                    console.error('XHR Status Text:', xhr.statusText);
+
+                    let errorMessage = 'Network error: ' + error;
+                    try {
+                        // Try to parse error response if it's JSON
+                        if (xhr.responseText) {
+                            const errorResponse = JSON.parse(xhr.responseText);
+                            errorMessage = errorResponse.message || errorMessage;
+                            console.error('Parsed error response:', errorResponse);
+                        }
+                    } catch (e) {
+                        console.error('Could not parse error response as JSON');
+                    }
+
+                    console.log('========== FETCH ITEM DATA END (NETWORK ERROR) ==========');
+                    reject(new Error(errorMessage));
                 }
             });
         });
@@ -3054,14 +3207,526 @@ require_once 'views/partials/footer.php';
         toastr.success('QR Code downloaded!');
     }
 
-    // ========== CHART FUNCTIONS ==========
+    // ========== QR CODE GENERATION FUNCTIONS ==========
+
+    function generateQRCodeForItem(itemId, itemName) {
+        if (!itemId) {
+            toastr.error('Invalid item ID');
+            return;
+        }
+
+        if (confirm(`Generate QR Code for "${itemName}"?`)) {
+            $.ajax({
+                url: 'api/generate_qr.php',
+                method: 'POST',
+                data: {
+                    item_id: itemId
+                },
+                dataType: 'json',
+                beforeSend: function() {
+                    toastr.info('Generating QR code...');
+                },
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success('QR Code generated successfully!');
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        toastr.error(response.message || 'Failed to generate QR code');
+                    }
+                },
+                error: function() {
+                    toastr.error('Error generating QR code');
+                }
+            });
+        }
+    }
+
+    function generateQRCodeFromQuickView(itemId, itemName) {
+        generateQRCodeForItem(itemId, itemName);
+    }
+
+    function regenerateQRCode(itemId, itemName) {
+        if (!itemId) return;
+
+        if (!confirm(`Regenerate QR code for "${itemName}"? This will replace the existing QR code.`)) {
+            return;
+        }
+
+        $('#editRegenerateQRBtn').html('<span class="spinner-border spinner-border-sm me-1"></span> Generating...');
+        $('#editRegenerateQRBtn').prop('disabled', true);
+
+        $.ajax({
+            url: 'api/generate_qr.php',
+            method: 'POST',
+            data: {
+                id: itemId
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    toastr.success('QR code regenerated successfully');
+                    updateEditQRCode(response.qr_code);
+                } else {
+                    toastr.error(response.message || 'Failed to regenerate QR code');
+                }
+            },
+            error: function() {
+                toastr.error('Error regenerating QR code');
+            },
+            complete: function() {
+                $('#editRegenerateQRBtn').html('<i class="fas fa-sync-alt me-1"></i> Regenerate QR Code');
+                $('#editRegenerateQRBtn').prop('disabled', false);
+            }
+        });
+    }
+
+    // ========== QR CODE ZIP FUNCTIONS ==========
+
+    function generateAndDownloadQRZipWithProgress() {
+        // Disable the button to prevent multiple clicks
+        const button = document.querySelector('button[onclick*="generateAndDownloadQRZipWithProgress"]');
+        if (button) {
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Processing...';
+            button.disabled = true;
+        }
+
+        toastr.info('Starting QR code generation...');
+
+        // Create a simple progress modal
+        const modalHtml = `
+            <div class="modal fade" id="qrProcessingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title">Generating QR Codes</h5>
+                        </div>
+                        <div class="modal-body">
+                            <div class="text-center">
+                                <div class="spinner-border text-primary mb-3" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p>Generating QR codes for all items...</p>
+                                <p class="text-muted small">This may take a few moments.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+
+        // Remove existing modal if any
+        $('#qrProcessingModal').remove();
+        $('body').append(modalHtml);
+
+        const modal = new bootstrap.Modal(document.getElementById('qrProcessingModal'));
+        modal.show();
+
+        // Make the AJAX call
+        $.ajax({
+            url: 'api/quick_qr_zip.php',
+            method: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                console.log('Response:', response);
+
+                // Close modal first
+                modal.hide();
+                setTimeout(() => {
+                    $('#qrProcessingModal').remove();
+                }, 300);
+
+                if (response.success) {
+                    toastr.success(response.message);
+
+                    // Trigger download immediately
+                    if (response.download_url) {
+                        const link = document.createElement('a');
+                        link.href = response.download_url;
+                        link.download = response.filename || 'qr_codes.zip';
+                        link.style.display = 'none';
+                        document.body.appendChild(link);
+                        link.click();
+
+                        // Clean up after a short delay
+                        setTimeout(() => {
+                            document.body.removeChild(link);
+                            toastr.success('Download started! Check your downloads folder.');
+                        }, 100);
+                    }
+                } else {
+                    toastr.error(response.message || 'Failed to generate QR codes');
+                }
+
+                // Re-enable button
+                if (button) {
+                    button.innerHTML = '<i class="fas fa-file-archive me-1"></i> Generate & Download ZIP';
+                    button.disabled = false;
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error:', error);
+                console.log('Response:', xhr.responseText);
+
+                modal.hide();
+                $('#qrProcessingModal').remove();
+
+                let errorMessage = 'Failed to generate QR codes';
+
+                try {
+                    // Try to parse as JSON
+                    const jsonResponse = JSON.parse(xhr.responseText);
+                    if (jsonResponse && jsonResponse.message) {
+                        errorMessage = jsonResponse.message;
+                    }
+                } catch (e) {
+                    // If not JSON, show raw error
+                    errorMessage = 'Server error: ' + error;
+                }
+
+                toastr.error(errorMessage);
+
+                // Re-enable button
+                if (button) {
+                    button.innerHTML = '<i class="fas fa-file-archive me-1"></i> Generate & Download ZIP';
+                    button.disabled = false;
+                }
+            }
+        });
+    }
+
+    function generateAndDownloadQRZip() {
+        // Create confirmation modal HTML
+        const confirmModalHtml = `
+            <div class="modal fade" id="qrConfirmModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title">Generate QR Codes</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="text-center mb-3">
+                                <i class="fas fa-qrcode fa-3x text-primary mb-3"></i>
+                                <p class="lead">This will generate QR codes for all items and create a ZIP file.</p>
+                                <p class="text-muted">This may take a few moments.</p>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times me-1"></i> Cancel
+                            </button>
+                            <button type="button" class="btn btn-primary" id="confirmGenerateBtn">
+                                <i class="fas fa-play me-1"></i> Continue
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+
+        // Remove existing modal if any
+        $('#qrConfirmModal').remove();
+        $('body').append(confirmModalHtml);
+
+        const confirmModal = new bootstrap.Modal(document.getElementById('qrConfirmModal'));
+        confirmModal.show();
+
+        // Handle confirmation button click
+        $('#confirmGenerateBtn').off('click').on('click', function() {
+            confirmModal.hide();
+            $('#qrConfirmModal').remove();
+            proceedWithQRGeneration();
+        });
+
+        // Handle modal close
+        $('#qrConfirmModal').on('hidden.bs.modal', function() {
+            $('#qrConfirmModal').remove();
+            toastr.info('Operation cancelled.');
+        });
+
+        function proceedWithQRGeneration() {
+            // Disable the button to prevent multiple clicks
+            const button = document.querySelector('button[onclick*="generateAndDownloadQRZip"]');
+            if (button) {
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Processing...';
+                button.disabled = true;
+            }
+
+            // Create progress modal
+            const modalHtml = `
+                <div class="modal fade" id="qrZipProgressModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header bg-primary text-white">
+                                <h5 class="modal-title">Generating QR Codes & ZIP</h5>
+                            </div>
+                            <div class="modal-body">
+                                <div class="text-center mb-3">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                                <div class="mb-2">
+                                    <span id="qrZipProgressText">Initializing...</span>
+                                </div>
+                                <div class="progress" style="height: 20px;">
+                                    <div id="qrZipProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                                         role="progressbar" style="width: 0%">0%</div>
+                                </div>
+                                <div class="mt-3 small text-muted">
+                                    <div>Status: <span id="qrZipStatus">Preparing...</span></div>
+                                    <div>Progress: <span id="qrZipProgress">0%</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+
+            // Remove existing modal if any
+            $('#qrZipProgressModal').remove();
+            $('body').append(modalHtml);
+
+            const modal = new bootstrap.Modal(document.getElementById('qrZipProgressModal'));
+            modal.show();
+
+            // Update progress
+            $('#qrZipProgressText').text('Starting QR code generation...');
+            $('#qrZipStatus').text('Connecting to server...');
+
+            // Start the process
+            $.ajax({
+                url: 'api/generate_all_qr_codes.php',
+                method: 'POST',
+                dataType: 'json',
+                xhr: function() {
+                    const xhr = new window.XMLHttpRequest();
+
+                    // Track progress
+                    xhr.addEventListener('progress', function(evt) {
+                        if (evt.lengthComputable) {
+                            const percentComplete = (evt.loaded / evt.total) * 100;
+                            $('#qrZipProgressBar').css('width', percentComplete + '%')
+                                .text(Math.round(percentComplete) + '%');
+                            $('#qrZipProgress').text(Math.round(percentComplete) + '%');
+
+                            if (percentComplete < 100) {
+                                $('#qrZipProgressText').text('Processing...');
+                                $('#qrZipStatus').text('Uploading: ' + Math.round(percentComplete) + '%');
+                            }
+                        }
+                    });
+
+                    return xhr;
+                },
+                beforeSend: function() {
+                    $('#qrZipProgressText').text('Sending request to server...');
+                },
+                success: function(response) {
+                    console.log('Server response:', response);
+
+                    if (response.success) {
+                        $('#qrZipProgressText').text('Processing complete!');
+                        $('#qrZipProgressBar').css('width', '100%').text('100%').removeClass('progress-bar-animated');
+                        $('#qrZipStatus').text('Creating download...');
+                        $('#qrZipProgress').text('100%');
+
+                        setTimeout(() => {
+                            modal.hide();
+                            $('#qrZipProgressModal').remove();
+
+                            toastr.success(response.message);
+
+                            // Trigger download
+                            if (response.download_url) {
+                                const downloadLink = document.createElement('a');
+                                downloadLink.href = response.download_url;
+                                downloadLink.download = response.filename || 'qr_codes.zip';
+                                downloadLink.target = '_blank';
+                                document.body.appendChild(downloadLink);
+                                downloadLink.click();
+                                document.body.removeChild(downloadLink);
+
+                                toastr.success('Download started! Check your downloads folder.');
+                            }
+
+                            // Refresh page after a delay
+                            setTimeout(() => {
+                                location.reload();
+                            }, 3000);
+                        }, 1000);
+                    } else {
+                        modal.hide();
+                        $('#qrZipProgressModal').remove();
+                        toastr.error(response.message || 'Failed to generate QR codes');
+                    }
+
+                    // Re-enable button
+                    if (button) {
+                        button.innerHTML = '<i class="fas fa-file-archive me-1"></i> Generate & Download ZIP';
+                        button.disabled = false;
+                    }
+                },
+                error: function(xhr, status, error) {
+                    modal.hide();
+                    $('#qrZipProgressModal').remove();
+
+                    console.error('Error details:', error);
+                    console.error('XHR response:', xhr.responseText);
+
+                    let errorMessage = 'Failed to generate QR codes';
+
+                    try {
+                        // Try to parse error response
+                        if (xhr.responseText) {
+                            // Check if it's HTML error
+                            if (xhr.responseText.includes('<br') || xhr.responseText.includes('<b>')) {
+                                // Extract just the error message
+                                const tempDiv = document.createElement('div');
+                                tempDiv.innerHTML = xhr.responseText;
+                                const text = tempDiv.textContent || tempDiv.innerText || '';
+
+                                // Find the actual error message
+                                const lines = text.split('\n').filter(line => line.trim());
+                                errorMessage = lines.length > 0 ? lines[0].substring(0, 200) : 'Server error occurred';
+                            } else {
+                                // Try to parse as JSON
+                                const jsonResponse = JSON.parse(xhr.responseText);
+                                if (jsonResponse && jsonResponse.message) {
+                                    errorMessage = jsonResponse.message;
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        errorMessage = xhr.statusText || 'Server error';
+                    }
+
+                    toastr.error('Error: ' + errorMessage);
+
+                    // Re-enable button
+                    if (button) {
+                        button.innerHTML = '<i class="fas fa-file-archive me-1"></i> Generate & Download ZIP';
+                        button.disabled = false;
+                    }
+                }
+            });
+        }
+    }
+
+    function downloadAllQRCodes() {
+        // Show loading notification
+        toastr.info('Fetching all items from database...', 'Processing', {
+            timeOut: 0,
+            extendedTimeOut: 0
+        });
+
+        // Show loading state in the button
+        const button = document.querySelector('button[onclick="downloadAllQRCodes()"]');
+        if (button) {
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Fetching items...';
+            button.disabled = true;
+        }
+
+        // Fetch all items from API - use relative URL instead of BASE_URL
+        fetch('api/items/list.php?limit=1000&page=1')
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success || !data.items || data.items.length === 0) {
+                    toastr.error('No items found in database');
+                    resetDownloadButton();
+                    return;
+                }
+
+                const items = data.items;
+                const totalItems = items.length;
+
+                toastr.clear();
+                toastr.info(`Found ${totalItems} items. Preparing QR codes...`, 'Processing');
+
+                // Filter items that have QR codes
+                const itemsWithQR = items.filter(item => item.qr_code && item.qr_code !== '' && item.qr_code !== 'pending');
+
+                if (itemsWithQR.length === 0) {
+                    toastr.warning('No QR codes found in database');
+                    resetDownloadButton();
+                    return;
+                }
+
+                toastr.info(`Found ${itemsWithQR.length} items with QR codes. Starting download...`, 'Processing');
+
+                // Download each QR code with delay
+                let downloaded = 0;
+                const promises = [];
+
+                itemsWithQR.forEach((item, index) => {
+                    promises.push(new Promise((resolve) => {
+                        setTimeout(() => {
+                            try {
+                                // Make sure the QR code URL is absolute
+                                let qrUrl = item.qr_code;
+
+                                // If it's a relative path, make it absolute
+                                if (qrUrl && !qrUrl.startsWith('http')) {
+                                    // Get the base URL from the current location
+                                    const baseUrl = window.location.origin + '/ability_app_main/';
+                                    qrUrl = baseUrl + qrUrl.replace(/^\//, '');
+                                }
+
+                                const safeName = (item.item_name || 'item')
+                                    .replace(/[<>:"/\\|?*]/g, '')
+                                    .replace(/\s+/g, '_')
+                                    .substring(0, 50);
+
+                                const safeSerial = (item.serial_number || 'item').replace(/[^a-z0-9]/gi, '_');
+                                const filename = `QR_${safeName}_${safeSerial}.png`;
+
+                                const link = document.createElement('a');
+                                link.href = qrUrl;
+                                link.download = filename;
+                                link.target = '_blank';
+
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+
+                                downloaded++;
+                                console.log(`Downloaded (${downloaded}/${itemsWithQR.length}): ${item.item_name}`);
+                                resolve();
+                            } catch (error) {
+                                console.error(`Error downloading ${item.item_name}:`, error);
+                                resolve();
+                            }
+                        }, index * 300); // 300ms delay between downloads
+                    }));
+                });
+
+                Promise.all(promises).then(() => {
+                    toastr.success(`Successfully downloaded ${downloaded} QR codes!`);
+                    resetDownloadButton();
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching items:', error);
+                toastr.error('Failed to fetch items: ' + error.message);
+                resetDownloadButton();
+            });
+
+        function resetDownloadButton() {
+            if (button) {
+                button.innerHTML = '<i class="fas fa-download me-1"></i> Download All QR Codes';
+                button.disabled = false;
+            }
+        }
+    }
+
+    // ========== CHART FUNCTIONS (SINGLE DEFINITION) ==========
 
     function initializeStatusChart() {
         console.log('Initializing status chart with real data...');
 
         const canvas = document.getElementById('statusChart');
         if (!canvas) {
-            console.error('Chart canvas (#statusChart) not found');
+            console.log('Chart canvas (#statusChart) not found - skipping chart initialization');
             return;
         }
 
@@ -3070,11 +3735,30 @@ require_once 'views/partials/footer.php';
             window.statusChartInstance.destroy();
         }
 
-        // Get data from PHP variables (these need to be passed from PHP)
-        const statusLabels = <?php echo json_encode($statusLabels); ?>;
-        const statusCounts = <?php echo json_encode($statusCounts); ?>;
-        const statusColors = <?php echo json_encode($statusColors); ?>;
-        const statusPercentages = <?php echo json_encode($statusPercentages); ?>;
+        // Initialize with default values first
+        let statusLabels = ['Available', 'In Use', 'Maintenance', 'Disposed'];
+        let statusCounts = [0, 0, 0, 0];
+        let statusColors = ['rgba(40, 167, 69, 0.8)', 'rgba(0, 123, 255, 0.8)', 'rgba(255, 193, 7, 0.8)', 'rgba(220, 53, 69, 0.8)'];
+        let statusPercentages = [0, 0, 0, 0];
+
+        // Try to get data from PHP if available (via data attributes or separate API call)
+        $.ajax({
+            url: 'api/get_status_chart_data.php',
+            method: 'GET',
+            dataType: 'json',
+            async: false, // Make it synchronous for initialization
+            success: function(response) {
+                if (response.success && response.data) {
+                    statusLabels = response.data.labels || statusLabels;
+                    statusCounts = response.data.counts || statusCounts;
+                    statusColors = response.data.colors || statusColors;
+                    statusPercentages = response.data.percentages || statusPercentages;
+                }
+            },
+            error: function() {
+                console.log('Using default chart data');
+            }
+        });
 
         // Create border colors from background colors
         const borderColors = statusColors.map(color => {
@@ -3116,20 +3800,21 @@ require_once 'views/partials/footer.php';
                             pointStyle: 'circle',
                             generateLabels: function(chart) {
                                 const data = chart.data;
-                                if (data.labels.length && data.datasets.length) {
+                                if (data.labels && data.labels.length && data.datasets && data.datasets.length) {
                                     return data.labels.map(function(label, i) {
                                         const meta = chart.getDatasetMeta(0);
                                         const style = meta.controller.getStyle(i);
-                                        const value = data.datasets[0].data[i];
+                                        const value = data.datasets[0].data[i] || 0;
+                                        const total = data.datasets[0].data.reduce((a, b) => (a || 0) + (b || 0), 0);
                                         const percentage = data.datasets[0].percentageData?.[i] ||
-                                            ((value / data.datasets[0].data.reduce((a, b) => a + b, 0)) * 100).toFixed(1);
+                                            (total > 0 ? ((value / total) * 100).toFixed(1) : 0);
 
                                         return {
                                             text: `${label}: ${value} (${percentage}%)`,
                                             fillStyle: style.backgroundColor,
                                             strokeStyle: style.borderColor,
                                             lineWidth: style.borderWidth,
-                                            hidden: isNaN(data.datasets[0].data[i]) || meta.data[i].hidden,
+                                            hidden: isNaN(data.datasets[0].data[i]) || (meta.data && meta.data[i] && meta.data[i].hidden),
                                             index: i
                                         };
                                     });
@@ -3143,7 +3828,7 @@ require_once 'views/partials/footer.php';
                             label: function(context) {
                                 const label = context.label || '';
                                 const value = context.raw || 0;
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const total = context.dataset.data.reduce((a, b) => (a || 0) + (b || 0), 0);
                                 const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
                                 return `${label}: ${value} items (${percentage}%)`;
                             }
@@ -3164,15 +3849,16 @@ require_once 'views/partials/footer.php';
                     const data = chart.data;
                     const dataset = data.datasets[0];
 
-                    if (dataset.data && dataset.data.length > 0) {
-                        const isRealData = data.labels.length > 1 ||
-                            (data.labels.length === 1 && data.labels[0] !== 'No Data');
+                    if (dataset && dataset.data && dataset.data.length > 0) {
+                        const isRealData = data.labels &&
+                            (data.labels.length > 1 ||
+                                (data.labels.length === 1 && data.labels[0] !== 'No Data'));
 
                         if (isRealData) {
                             const width = chart.width;
                             const height = chart.height;
                             const ctx = chart.ctx;
-                            const total = dataset.data.reduce((a, b) => a + b, 0);
+                            const total = dataset.data.reduce((a, b) => (a || 0) + (b || 0), 0);
 
                             ctx.restore();
                             ctx.font = "bold 16px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
@@ -3200,7 +3886,8 @@ require_once 'views/partials/footer.php';
         console.log('✅ Status chart created with real data');
     }
 
-    function refreshStatusChart() {
+    function refreshStatusChart(event) {
+        // Fix: Add event parameter and handle it safely
         const refreshBtn = event?.target?.closest('button');
         if (refreshBtn) {
             refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
@@ -3214,29 +3901,30 @@ require_once 'views/partials/footer.php';
             method: 'GET',
             dataType: 'json',
             success: function(response) {
-                if (response.success) {
-                    if (window.statusChartInstance) {
-                        window.statusChartInstance.data.labels = response.data.labels;
-                        window.statusChartInstance.data.datasets[0].data = response.data.counts;
-                        window.statusChartInstance.data.datasets[0].backgroundColor = response.data.colors;
-                        window.statusChartInstance.data.datasets[0].borderColor = response.data.colors.map(color =>
-                            color.replace('0.8', '1')
-                        );
-                        window.statusChartInstance.data.datasets[0].percentageData = response.data.percentages;
+                if (response && response.success) {
+                    if (window.statusChartInstance && response.data) {
+                        // Safely update chart with null checks
+                        window.statusChartInstance.data.labels = response.data.labels || window.statusChartInstance.data.labels;
+                        window.statusChartInstance.data.datasets[0].data = response.data.counts || window.statusChartInstance.data.datasets[0].data;
+                        window.statusChartInstance.data.datasets[0].backgroundColor = response.data.colors || window.statusChartInstance.data.datasets[0].backgroundColor;
+                        window.statusChartInstance.data.datasets[0].borderColor = response.data.colors ?
+                            response.data.colors.map(color => color.replace('0.8', '1')) :
+                            window.statusChartInstance.data.datasets[0].borderColor;
+                        window.statusChartInstance.data.datasets[0].percentageData = response.data.percentages || window.statusChartInstance.data.datasets[0].percentageData;
                         window.statusChartInstance.update();
                     }
 
-                    if (response.data.table_html) {
+                    if (response.data && response.data.table_html) {
                         $('#statusTableBody').html(response.data.table_html);
                     }
 
-                    if (response.data.total) {
+                    if (response.data && response.data.total) {
                         $('#totalEquipmentCount').text(response.data.total);
                     }
 
                     toastr.success('Status data refreshed!');
                 } else {
-                    toastr.error(response.message || 'Failed to refresh data');
+                    toastr.error(response?.message || 'Failed to refresh data');
                 }
             },
             error: function(xhr, status, error) {
@@ -3251,6 +3939,7 @@ require_once 'views/partials/footer.php';
             }
         });
     }
+
 
     // ========== CLOCK & CALENDAR FUNCTIONS ==========
 
@@ -3356,11 +4045,11 @@ require_once 'views/partials/footer.php';
             const fontWeight = isToday ? 'fw-bold' : '';
 
             calendarHTML += `<td class="text-center p-1" style="width: 14.28%;">
-            <span class="${cellClass} ${fontWeight}" 
-                  style="display: inline-block; width: 24px; height: 24px; line-height: 24px; border-radius: 50%;">
-                ${day}
-            </span>
-        </td>`;
+                <span class="${cellClass} ${fontWeight}" 
+                      style="display: inline-block; width: 24px; height: 24px; line-height: 24px; border-radius: 50%;">
+                    ${day}
+                </span>
+            </td>`;
 
             // Start new row after Saturday
             if ((day + startingDay) % 7 === 0 && day < daysInMonth) {
@@ -3386,149 +4075,6 @@ require_once 'views/partials/footer.php';
     function startClock() {
         updateDateTime();
         setInterval(updateDateTime, 1000);
-    }
-
-
-    function downloadAllQRCodes() {
-        const rows = document.querySelectorAll('#recentItemsTable tbody tr');
-
-        if (rows.length === 0) {
-            toastr.error('No items found in the table');
-            return;
-        }
-
-        toastr.info(`Found ${rows.length} items. Checking for QR codes...`);
-
-        let qrCount = 0;
-        const promises = [];
-
-        rows.forEach((row, index) => {
-            const quickBtn = row.querySelector('.quick-view-btn');
-            if (!quickBtn) return;
-
-            const itemName = quickBtn.dataset.itemName || `Item_${index + 1}`;
-            const serial = quickBtn.dataset.itemSerial || '';
-            const qrCode = quickBtn.dataset.qrCode || '';
-
-            if (!qrCode || qrCode === '' || qrCode === 'pending') {
-                console.log(`No QR code for ${itemName}`);
-                return;
-            }
-
-            qrCount++;
-
-            promises.push(new Promise((resolve) => {
-                setTimeout(() => {
-                    try {
-                        const safeName = itemName
-                            .replace(/[<>:"/\\|?*]/g, '')
-                            .replace(/\s+/g, '_')
-                            .substring(0, 50);
-
-                        const safeSerial = serial.replace(/[^a-z0-9]/gi, '_');
-                        const filename = `QR_${safeName}_${safeSerial || 'item'}.png`;
-
-                        const link = document.createElement('a');
-                        link.href = qrCode;
-                        link.download = filename;
-
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-
-                        console.log(`Downloaded: ${itemName}`);
-                        resolve();
-                    } catch (error) {
-                        console.error(`Error downloading ${itemName}:`, error);
-                        resolve();
-                    }
-                }, index * 500);
-            }));
-        });
-
-        if (qrCount === 0) {
-            toastr.error('No QR codes found in the current table view');
-            return;
-        }
-
-        toastr.info(`Starting download of ${qrCount} QR codes...`);
-
-        Promise.all(promises).then(() => {
-            setTimeout(() => {
-                toastr.success(`Successfully downloaded ${qrCount} QR codes!`);
-            }, 500);
-        });
-    }
-
-    function generateQRCodeFromQuickView(itemId, itemName) {
-        if (!itemId) {
-            toastr.error('Invalid item ID');
-            return;
-        }
-
-        if (confirm(`Generate QR Code for "${itemName}"?`)) {
-            $.ajax({
-                url: 'api/generate_qr.php',
-                method: 'POST',
-                data: {
-                    item_id: itemId
-                },
-                dataType: 'json',
-                beforeSend: function() {
-                    toastr.info('Generating QR code...');
-                },
-                success: function(response) {
-                    if (response.success) {
-                        toastr.success('QR Code generated successfully!');
-                        setTimeout(() => location.reload(), 1500);
-                    } else {
-                        toastr.error(response.message || 'Failed to generate QR code');
-                    }
-                },
-                error: function() {
-                    toastr.error('Error generating QR code');
-                }
-            });
-        }
-    }
-
-    function generateQRCodeForItem(itemId, itemName) {
-        generateQRCodeFromQuickView(itemId, itemName);
-    }
-
-    function regenerateQRCode(itemId, itemName) {
-        if (!itemId) return;
-
-        if (!confirm(`Regenerate QR code for "${itemName}"? This will replace the existing QR code.`)) {
-            return;
-        }
-
-        $('#editRegenerateQRBtn').html('<span class="spinner-border spinner-border-sm me-1"></span> Generating...');
-        $('#editRegenerateQRBtn').prop('disabled', true);
-
-        $.ajax({
-            url: 'api/generate_qr.php',
-            method: 'POST',
-            data: {
-                id: itemId
-            },
-            dataType: 'json',
-            success: function(response) {
-                if (response.success) {
-                    toastr.success('QR code regenerated successfully');
-                    updateEditQRCode(response.qr_code);
-                } else {
-                    toastr.error(response.message || 'Failed to regenerate QR code');
-                }
-            },
-            error: function() {
-                toastr.error('Error regenerating QR code');
-            },
-            complete: function() {
-                $('#editRegenerateQRBtn').html('<i class="fas fa-sync-alt me-1"></i> Regenerate QR Code');
-                $('#editRegenerateQRBtn').prop('disabled', false);
-            }
-        });
     }
 
     // ========== EDIT MODAL FUNCTIONS ==========
@@ -3677,8 +4223,16 @@ require_once 'views/partials/footer.php';
         // Fetch item data
         fetchItemData(itemId).then(function(data) {
             console.log('Edit data received:', data);
+
+            // Check if we have the data
+            if (!data) {
+                toastr.error('No data received');
+                return;
+            }
+
             modalBody.html(originalEditModalHtml);
             populateEditItemModal(data);
+
         }).catch(function(error) {
             console.error('Failed to load item:', error);
             modalBody.html(`
@@ -3753,7 +4307,15 @@ require_once 'views/partials/footer.php';
     }
 
     function populateViewItemModal(data) {
+        console.log('========== POPULATE VIEW MODAL START ==========');
         console.log('Populating view modal with:', data);
+        console.log('Description in view modal:', data?.description);
+        console.log('Description type:', typeof data?.description);
+
+        // Check if the viewDescription element exists
+        const viewDescElement = $('#viewDescription');
+        console.log('viewDescription element exists:', viewDescElement.length > 0);
+        console.log('viewDescription element HTML:', viewDescElement.length ? viewDescElement[0].outerHTML : 'Element not found');
 
         $('#viewItemModalLabel').html(`<i class="fas fa-eye me-2"></i>View: ${data.item_name || 'Item'}`);
         $('#viewItemId').text(data.id || '');
@@ -3771,7 +4333,7 @@ require_once 'views/partials/footer.php';
         // QR Code
         updateViewQRCode(data.qr_code, data.item_name, data.serial_number);
 
-        // Basic Information
+        // ========== BASIC INFORMATION ==========
         $('#viewItemName').text(data.item_name || 'N/A');
         $('#viewSerialNumber').text(data.serial_number || 'N/A');
         $('#viewCategory').text(data.category || 'N/A');
@@ -3779,31 +4341,92 @@ require_once 'views/partials/footer.php';
         $('#viewModel').text(data.model || 'N/A');
         $('#viewBrandModel').text(data.brand_model || 'N/A');
 
-        // Status & Condition
-        updateViewStatusBadges(data);
+        // ========== STATUS & CONDITION ==========
+        // Condition badge
+        const conditionBadge = $('#viewCondition');
+        conditionBadge.removeClass().addClass('badge');
+        const condition = (data.condition || 'good').toLowerCase();
+        switch (condition) {
+            case 'new':
+            case 'excellent':
+                conditionBadge.addClass('bg-success').text('Excellent');
+                break;
+            case 'good':
+                conditionBadge.addClass('bg-primary').text('Good');
+                break;
+            case 'fair':
+                conditionBadge.addClass('bg-info').text('Fair');
+                break;
+            case 'poor':
+                conditionBadge.addClass('bg-warning').text('Poor');
+                break;
+            case 'damaged':
+            case 'broken':
+                conditionBadge.addClass('bg-danger').text('Damaged');
+                break;
+            default:
+                conditionBadge.addClass('bg-secondary').text(data.condition || 'Unknown');
+        }
 
-        // Location
+        // Status badge
+        const statusBadge = $('#viewItemStatusBadge');
+        statusBadge.removeClass().addClass('badge');
+        const status = (data.status || 'available').toLowerCase();
+        switch (status) {
+            case 'available':
+                statusBadge.addClass('bg-success').text('Available');
+                break;
+            case 'in_use':
+                statusBadge.addClass('bg-primary').text('In Use');
+                break;
+            case 'maintenance':
+                statusBadge.addClass('bg-warning').text('Maintenance');
+                break;
+            case 'reserved':
+                statusBadge.addClass('bg-info').text('Reserved');
+                break;
+            case 'disposed':
+                statusBadge.addClass('bg-danger').text('Disposed');
+                break;
+            case 'lost':
+                statusBadge.addClass('bg-dark').text('Lost');
+                break;
+            default:
+                statusBadge.addClass('bg-secondary').text(data.status || 'Unknown');
+        }
+
+        // ========== LOCATION INFORMATION ==========
         $('#viewStockLocation').text(data.stock_location || 'Not Set');
         $('#viewStorageLocation').text(data.storage_location || 'Not Set');
         $('#viewCurrentLocation').text(data.current_location || 'Not Set');
 
-        // Department
+        // ========== DEPARTMENT ==========
         $('#viewDepartment').text(data.department || 'Not Set');
 
-        // Quantity
+        // ========== QUANTITY ==========
         $('#viewQuantity').text(data.quantity || 1);
 
-        // Dates
+        // ========== DATES ==========
         $('#viewCreatedAt').text(formatDateTime(data.created_at) || 'N/A');
         $('#viewUpdatedAt').text(formatDateTime(data.updated_at) || 'N/A');
         $('#viewLastScanned').text(data.last_scanned ? formatDateTime(data.last_scanned) : 'Never');
 
-        // Description & Notes
-        $('#viewDescription').text(data.description || 'No description available');
+        // ========== DESCRIPTION & NOTES ==========
+        console.log('Setting description to:', data.description || 'No description available');
+
+        // Try setting the text
+        viewDescElement.text(data.description || 'No description available');
+
+        // Verify it was set
+        setTimeout(() => {
+            console.log('Description text after setting:', $('#viewDescription').text());
+            console.log('Description HTML after setting:', $('#viewDescription').html());
+        }, 100);
+
         $('#viewSpecifications').text(data.specifications || 'No specifications available');
         $('#viewNotes').text(data.notes || 'No notes available');
 
-        // Tags
+        // ========== TAGS ==========
         if (data.tags && data.tags.trim() !== '') {
             const tags = data.tags.split(',').map(tag => tag.trim());
             let tagsHtml = '';
@@ -3816,13 +4439,58 @@ require_once 'views/partials/footer.php';
             $('#viewTagsSection').hide();
         }
 
-        // Accessories
-        if (data.accessories && data.accessories.length > 0) {
-            let accessoriesHtml = '<div class="d-flex flex-wrap gap-1">';
-            data.accessories.forEach(acc => {
-                accessoriesHtml += `<span class="badge bg-info p-2 m-1">${escapeHtml(acc.name)}</span>`;
-            });
-            accessoriesHtml += '</div>';
+        // ========== ACCESSORIES ==========
+        // ========== ACCESSORIES ==========
+        console.log('Processing accessories for item:', data.id);
+        console.log('Accessories data:', data.accessories);
+
+        let accessoriesHtml = '<div class="d-flex flex-wrap gap-1">';
+        let hasAccessories = false;
+
+        // Check accessories array FIRST (this is where your data is)
+        if (data.accessories && Array.isArray(data.accessories)) {
+            if (data.accessories.length > 0) {
+                console.log(`Found ${data.accessories.length} accessories in array`);
+                data.accessories.forEach(acc => {
+                    if (acc) {
+                        accessoriesHtml += `<span class="badge bg-info p-2 m-1">${escapeHtml(acc)}</span>`;
+                        hasAccessories = true;
+                    }
+                });
+            } else {
+                console.log('Accessories array is empty');
+            }
+        }
+        // Check accessories_list as fallback
+        else if (data.accessories_list && Array.isArray(data.accessories_list)) {
+            if (data.accessories_list.length > 0) {
+                console.log(`Found ${data.accessories_list.length} accessories in accessories_list`);
+                data.accessories_list.forEach(acc => {
+                    if (acc) {
+                        const name = acc.name || acc;
+                        accessoriesHtml += `<span class="badge bg-info p-2 m-1">${escapeHtml(name)}</span>`;
+                        hasAccessories = true;
+                    }
+                });
+            }
+        }
+        // Check if accessories is a string
+        else if (data.accessories && typeof data.accessories === 'string' && data.accessories.trim() !== '') {
+            console.log('Parsing accessories string:', data.accessories);
+            const accList = data.accessories.split(',').map(a => a.trim()).filter(a => a);
+            if (accList.length > 0) {
+                accList.forEach(acc => {
+                    accessoriesHtml += `<span class="badge bg-info p-2 m-1">${escapeHtml(acc)}</span>`;
+                    hasAccessories = true;
+                });
+            }
+        }
+
+        accessoriesHtml += '</div>';
+
+        console.log('Has accessories?', hasAccessories);
+
+        if (hasAccessories) {
             $('#viewAccessoriesList').html(accessoriesHtml);
             $('#viewAccessoriesSection').show();
         } else {
@@ -3830,8 +4498,25 @@ require_once 'views/partials/footer.php';
             $('#viewAccessoriesList').html('<p class="text-muted mb-0">No accessories</p>');
         }
 
+        // ========== QR CODE INFO ==========
+        if (data.qr_code && data.qr_code !== '' && data.qr_code !== 'pending') {
+            $('#viewQRCode').html(`
+                <img src="${data.qr_code}" alt="QR Code" style="width: 150px; height: 150px;" class="img-fluid border rounded">
+                <div class="mt-2 small text-muted">${data.item_name || 'QR Code'}</div>
+            `);
+        } else {
+            $('#viewQRCode').html(`
+                <div class="text-center py-3">
+                    <i class="fas fa-qrcode fa-2x text-muted mb-2"></i>
+                    <p class="text-muted small mb-0">No QR Code</p>
+                </div>
+            `);
+        }
+
         window.currentViewItemData = data;
+        console.log('========== POPULATE VIEW MODAL END ==========');
     }
+
 
     function showViewItemError(itemId, error) {
         $('#viewItemName').text('Error Loading Item');
@@ -4093,6 +4778,13 @@ require_once 'views/partials/footer.php';
 
     // ========== CRUD OPERATIONS ==========
 
+    // Handle edit form submission
+    $(document).on('submit', '#editItemForm', function(e) {
+        e.preventDefault();
+        console.log('Edit form submitted');
+        submitEditItemForm();
+    });
+
     function submitEditItemForm() {
         // Validate required fields
         const itemName = $('#editItemName').val().trim();
@@ -4104,8 +4796,15 @@ require_once 'views/partials/footer.php';
             return;
         }
 
+        // Get the item ID
+        const itemId = $('#editItemId').val();
+
+        console.log('Submitting edit for item ID:', itemId);
+        console.log('Item Name:', itemName);
+        console.log('Category:', category);
+
         const formData = new FormData();
-        formData.append('id', $('#editItemId').val());
+        formData.append('id', itemId);
         formData.append('item_name', itemName);
         formData.append('serial_number', serialNumber);
         formData.append('category', category);
@@ -4122,26 +4821,31 @@ require_once 'views/partials/footer.php';
         formData.append('notes', $('#editNotes').val());
         formData.append('tags', $('#editTags').val());
 
+        // Get selected accessories
         const accessories = $('#editAccessories').val();
         if (accessories && accessories.length > 0) {
             formData.append('accessories', JSON.stringify(accessories));
         }
 
+        // Handle image
         const changeImage = $('#editChangeImage').is(':checked');
         if (changeImage) {
             const imageFile = $('#editItemImage')[0].files[0];
             if (imageFile) {
                 formData.append('image', imageFile);
+                console.log('Image file to upload:', imageFile.name);
             } else {
                 formData.append('remove_image', '1');
             }
         }
 
+        // Show loading state
         const submitBtn = $('#editSubmitBtn');
         const originalText = submitBtn.html();
         submitBtn.html('<span class="spinner-border spinner-border-sm me-1"></span> Saving...');
         submitBtn.prop('disabled', true);
 
+        // Submit via AJAX
         $.ajax({
             url: 'api/update_item.php',
             method: 'POST',
@@ -4150,19 +4854,38 @@ require_once 'views/partials/footer.php';
             contentType: false,
             dataType: 'json',
             success: function(response) {
+                console.log('Update response:', response);
+
                 if (response.success) {
                     toastr.success('Item updated successfully');
+
+                    // Close modal
                     const editModal = bootstrap.Modal.getInstance(document.getElementById('editItemModal'));
                     if (editModal) editModal.hide();
-                    setTimeout(() => location.reload(), 1500);
+
+                    // Reload the items list
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
                 } else {
                     toastr.error(response.message || 'Failed to update item');
+                    submitBtn.html(originalText);
+                    submitBtn.prop('disabled', false);
                 }
             },
             error: function(xhr, status, error) {
-                toastr.error('Error updating item: ' + error);
-            },
-            complete: function() {
+                console.error('Update error:', error);
+                console.error('Response:', xhr.responseText);
+
+                let errorMsg = 'Error updating item';
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    errorMsg = response.message || errorMsg;
+                } catch (e) {
+                    errorMsg = xhr.responseText || errorMsg;
+                }
+
+                toastr.error(errorMsg);
                 submitBtn.html(originalText);
                 submitBtn.prop('disabled', false);
             }
@@ -4221,29 +4944,291 @@ require_once 'views/partials/footer.php';
                 info: true,
                 autoWidth: false,
                 responsive: true,
+                serverSide: true, // ENABLE SERVER-SIDE PROCESSING
+                processing: true, // SHOW PROCESSING INDICATOR
                 order: [
-                    [1, 'asc']
+                    [1, 'desc']
+                ], // Order by Created At
+
+                // Define columns (same as before)
+                columns: [
+                    // Column 0: ID (Checkbox)
+                    {
+                        data: 'id',
+                        render: function(data, type, row) {
+                            if (type === 'display') {
+                                return `<span class="badge bg-" style="background: #486a83">${escapeHtml(data)}</span>`;
+                            }
+                            return data;
+                        }
+                    },
+                    // Column 1: Created At
+                    {
+                        data: 'created_at',
+                        render: function(data, type, row) {
+                            if (type === 'display') {
+                                if (!data) return '<span class="text-muted">N/A</span>';
+                                const date = new Date(data);
+                                return `<span class="badge bg-secondary" title="${data}">${date.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})}</span><br><small class="text-muted">${date.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'})}</small>`;
+                            }
+                            return data;
+                        }
+                    },
+                    // Column 2: Item Name
+                    {
+                        data: 'item_name',
+                        render: function(data, type, row) {
+                            if (type === 'display') {
+                                let html = `<div class="fw-bold">${escapeHtml(data || '')}</div>`;
+
+                                // Handle description - clean up "undefined"
+                                let description = row.description;
+                                if (description && description !== 'undefined' && description !== 'null') {
+                                    const desc = description.substring(0, 50);
+                                    html += `<small class="text-muted d-block">${escapeHtml(desc)}${description.length > 50 ? '...' : ''}</small>`;
+                                }
+
+                                return html;
+                            }
+                            return data;
+                        }
+                    },
+                    // Column 3: Serial Number
+                    {
+                        data: 'serial_number',
+                        render: function(data, type, row) {
+                            if (type === 'display') {
+                                return `<code>${escapeHtml(data || 'N/A')}</code>`;
+                            }
+                            return data;
+                        }
+                    },
+                    // Column 4: Category
+                    {
+                        data: 'category_name',
+                        render: function(data, type, row) {
+                            if (type === 'display') {
+                                return `<span class="badge bg-secondary">${escapeHtml(data || 'Uncategorized')}</span>`;
+                            }
+                            // For sorting, use the ID
+                            return row.category_id || row.category || '';
+                        }
+                    },
+
+                    // Column 8: Department - with mapping
+                    {
+                        data: 'department_name',
+                        render: function(data, type, row) {
+                            if (type === 'display') {
+                                return data ? escapeHtml(data) : '<span class="text-muted">Not Set</span>';
+                            }
+                            // For sorting, use the ID
+                            return row.department_id || row.department || '';
+                        }
+                    },
+                    // Column 5: Accessories
+                    {
+                        data: 'accessories',
+                        render: function(data, type, row) {
+                            if (type === 'display') {
+                                if (!data || data.length === 0) {
+                                    return '<span class="text-muted">None</span>';
+                                }
+
+                                let html = '<div class="d-flex flex-wrap gap-1">';
+                                data.forEach(acc => {
+                                    html += `<span class="badge bg-info me-1 mb-1">${escapeHtml(acc)}</span>`;
+                                });
+                                html += '</div>';
+                                return html;
+                            }
+                            return data;
+                        }
+                    },
+                    // Column 6: Brand
+                    {
+                        data: 'brand',
+                        render: function(data, type, row) {
+                            if (type === 'display') {
+                                return data ? escapeHtml(data) : '<span class="text-muted">N/A</span>';
+                            }
+                            return data;
+                        }
+                    },
+                    // Column 7: Model
+                    {
+                        data: 'model',
+                        render: function(data, type, row) {
+                            if (type === 'display') {
+                                return data ? escapeHtml(data) : '<span class="text-muted">N/A</span>';
+                            }
+                            return data;
+                        }
+                    },
+                    // Column 9: Location
+                    {
+                        data: 'stock_location',
+                        render: function(data, type, row) {
+                            if (type === 'display') {
+                                return data ? escapeHtml(data) : '<span class="text-muted">N/A</span>';
+                            }
+                            return data;
+                        }
+                    },
+                    // Column 10: Condition
+                    {
+                        data: 'condition',
+                        render: function(data, type, row) {
+                            if (type === 'display') {
+                                const condition = (data || 'good').toLowerCase();
+                                let conditionClass = 'bg-secondary';
+                                switch (condition) {
+                                    case 'new':
+                                        conditionClass = 'bg-success';
+                                        break;
+                                    case 'excellent':
+                                        conditionClass = 'bg-success';
+                                        break;
+                                    case 'good':
+                                        conditionClass = 'bg-primary';
+                                        break;
+                                    case 'fair':
+                                        conditionClass = 'bg-warning';
+                                        break;
+                                    case 'poor':
+                                        conditionClass = 'bg-danger';
+                                        break;
+                                }
+                                return `<span class="badge ${conditionClass}">${escapeHtml(data || 'Good')}</span>`;
+                            }
+                            return data;
+                        }
+                    },
+                    // Column 11: Status
+                    {
+                        data: 'status',
+                        render: function(data, type, row) {
+                            if (type === 'display') {
+                                const status = (data || 'available').toLowerCase();
+                                let statusClass = 'bg-secondary';
+                                switch (status) {
+                                    case 'available':
+                                        statusClass = 'bg-success';
+                                        break;
+                                    case 'in_use':
+                                        statusClass = 'bg-primary';
+                                        break;
+                                    case 'maintenance':
+                                        statusClass = 'bg-warning';
+                                        break;
+                                    case 'reserved':
+                                        statusClass = 'bg-info';
+                                        break;
+                                    case 'disposed':
+                                        statusClass = 'bg-danger';
+                                        break;
+                                    case 'lost':
+                                        statusClass = 'bg-dark';
+                                        break;
+                                }
+                                return `<span class="badge ${statusClass}">${escapeHtml(data || 'Available')}</span>`;
+                            }
+                            return data;
+                        }
+                    },
+                    // Column 12: Actions
+                    {
+                        data: null,
+                        render: function(data, type, row) {
+                            if (type === 'display') {
+                                return `
+                                <button type="button" class="btn btn-sm btn-primary quick-view-btn mb-1"
+                                    data-item-id="${row.id}"
+                                    data-item-name="${escapeHtml(row.item_name || '')}"
+                                    data-item-serial="${escapeHtml(row.serial_number || '')}"
+                                    data-item-category="${escapeHtml(row.category || 'N/A')}"
+                                    data-item-quantity="${row.quantity || 1}"
+                                    data-item-status="${escapeHtml(row.status || 'available')}"
+                                    data-item-condition="${escapeHtml(row.condition || 'good')}"
+                                    data-item-location="${escapeHtml(row.stock_location || 'N/A')}"
+                                    data-item-description="${escapeHtml(row.description || '')}"
+                                    data-item-brand="${escapeHtml(row.brand || 'N/A')}"
+                                    data-item-model="${escapeHtml(row.model || 'N/A')}"
+                                    data-item-department="${escapeHtml(row.department || 'N/A')}"
+                                    data-view-url="items/view.php?id=${row.id}"
+                                    data-edit-url="items/edit.php?id=${row.id}"
+                                    data-qr-code="${escapeHtml(row.qr_code || '')}"
+                                    title="Quick Actions">
+                                    <i class="fas fa-bolt"></i> Quick Actions
+                                </button>
+                            `;
+                            }
+                            return '';
+                        }
+                    }
                 ],
                 language: {
-                    emptyTable: "No equipment found",
+                    emptyTable: "No equipment found in the database",
+                    zeroRecords: "No matching records found",
                     info: "Showing _START_ to _END_ of _TOTAL_ items",
                     infoEmpty: "Showing 0 to 0 of 0 items",
                     infoFiltered: "(filtered from _MAX_ total items)",
-                    lengthMenu: "Show _MENU_ entries",
-                    search: "Search in all columns:",
+                    lengthMenu: "Show _MENU_ entries per page",
+                    search: "Search:",
                     paginate: {
                         first: "First",
                         last: "Last",
                         next: "Next",
                         previous: "Previous"
-                    }
+                    },
+                    processing: "Loading..."
                 },
-                processing: false,
-                serverSide: false,
-                ajax: null
+                columnDefs: [{
+                        targets: [0],
+                        orderable: false,
+                        searchable: false
+                    }, // ID/Checkbox column
+                    {
+                        targets: [12],
+                        orderable: false,
+                        searchable: false
+                    } // Actions column
+                ],
+                // Server-side processing configuration
+                ajax: {
+                    url: 'api/items/list.php',
+                    type: 'GET',
+                    dataType: 'json',
+                    data: function(d) {
+                        // Convert DataTables parameters to your API format
+                        return {
+                            page: Math.floor(d.start / d.length) + 1,
+                            limit: d.length,
+                            search: d.search.value,
+                            sort: d.columns[d.order[0].column].data,
+                            order: d.order[0].dir
+                        };
+                    },
+                    dataSrc: function(json) {
+                        console.log('DataTable server response:', json);
+
+                        if (json.success && json.pagination) {
+                            // CRITICAL: Tell DataTables about total records
+                            json.recordsTotal = json.pagination.totalItems;
+                            json.recordsFiltered = json.pagination.totalItems;
+                        }
+
+                        return json.success && json.items ? json.items : [];
+                    },
+                    error: function(xhr, error, thrown) {
+                        console.error('DataTable AJAX error:', error);
+                        console.error('Response:', xhr.responseText);
+                        return [];
+                    }
+                }
             });
 
-            console.log('✅ DataTable initialized successfully');
+            console.log('✅ DataTable initialized successfully with server-side processing');
             return dataTable;
 
         } catch (error) {
@@ -4253,14 +5238,198 @@ require_once 'views/partials/footer.php';
         }
     }
 
+    // Fallback function to load items manually if DataTable fails
+    function loadItemsManually() {
+        $.ajax({
+            url: 'api/items/list.php',
+            method: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                const items = response.success && response.items ? response.items : [];
+                const tbody = $('#recentItemsTable tbody');
+                tbody.empty();
+
+                if (items.length === 0) {
+                    tbody.html('<tr><td colspan="13" class="text-center">No equipment found</td></tr>');
+                    return;
+                }
+
+                items.forEach(item => {
+                    const row = createTableRow(item);
+                    tbody.append(row);
+                });
+
+                // Re-attach event handlers
+                attachTableEventHandlers();
+            },
+            error: function() {
+                $('#recentItemsTable tbody').html('<tr><td colspan="13" class="text-center text-danger">Error loading data</td></tr>');
+            }
+        });
+    }
+
+    // Helper function to create table row HTML
+    function createTableRow(item) {
+        const statusBadge = getStatusBadge(item.status);
+        const conditionBadge = getConditionBadge(item.condition);
+        const createdDate = item.created_at ? new Date(item.created_at) : null;
+
+        return `
+        <tr>
+            <td><input type="checkbox" class="item-checkbox" value="${item.id}"></td>
+            <td>${createdDate ? 
+                `<span class="badge bg-secondary" title="${item.created_at}">${createdDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})}</span><br><small class="text-muted">${createdDate.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'})}</small>` : 
+                '<span class="text-muted">N/A</span>'
+            }</td>
+            <td>
+                <div class="fw-bold">${escapeHtml(item.item_name || '')}</div>
+                ${item.description ? `<small class="text-muted d-block">${escapeHtml(item.description.substring(0, 50))}...</small>` : ''}
+            </td>
+            <td><code>${escapeHtml(item.serial_number || 'N/A')}</code></td>
+            <td><span class="badge bg-secondary">${escapeHtml(item.category || 'Uncategorized')}</span></td>
+            <td>${renderAccessories(item.accessories)}</td>
+            <td>${escapeHtml(item.brand || 'N/A')}</td>
+            <td>${escapeHtml(item.model || 'N/A')}</td>
+            <td>${escapeHtml(item.department || 'N/A')}</td>
+            <td>${escapeHtml(item.stock_location || 'N/A')}</td>
+            <td>${conditionBadge}</td>
+            <td>${statusBadge}</td>
+            <td>
+                <button type="button" class="btn btn-sm btn-primary quick-view-btn mb-1"
+                    data-item-id="${item.id}"
+                    data-item-name="${escapeHtml(item.item_name || '')}"
+                    data-item-serial="${escapeHtml(item.serial_number || '')}"
+                    data-item-category="${escapeHtml(item.category || 'N/A')}"
+                    data-item-quantity="${item.quantity || 1}"
+                    data-item-status="${escapeHtml(item.status || 'available')}"
+                    data-item-condition="${escapeHtml(item.condition || 'good')}"
+                    data-item-location="${escapeHtml(item.stock_location || 'N/A')}"
+                    data-item-description="${escapeHtml(item.description || '')}"
+                    data-item-brand="${escapeHtml(item.brand || 'N/A')}"
+                    data-item-model="${escapeHtml(item.model || 'N/A')}"
+                    data-item-department="${escapeHtml(item.department || 'N/A')}"
+                    data-view-url="items/view.php?id=${item.id}"
+                    data-edit-url="items/edit.php?id=${item.id}"
+                    data-qr-code="${escapeHtml(item.qr_code || '')}"
+                    title="Quick Actions">
+                    <i class="fas fa-bolt"></i> Quick Actions
+                </button>
+            </td>
+        </tr>
+    `;
+    }
+
+    function renderAccessories(accessories) {
+        if (!accessories || (Array.isArray(accessories) && accessories.length === 0)) {
+            return '<span class="text-muted">None</span>';
+        }
+        if (Array.isArray(accessories)) {
+            let html = '';
+            accessories.forEach(acc => {
+                html += `<span class="badge bg-info me-1 mb-1">${escapeHtml(acc.name || acc)}</span> `;
+            });
+            return html;
+        }
+        return escapeHtml(accessories);
+    }
+
+    function getConditionBadge(condition) {
+        const cond = (condition || 'good').toLowerCase();
+        let conditionClass = 'bg-secondary';
+        switch (cond) {
+            case 'new':
+                conditionClass = 'bg-success';
+                break;
+            case 'good':
+                conditionClass = 'bg-primary';
+                break;
+            case 'fair':
+                conditionClass = 'bg-warning';
+                break;
+            case 'poor':
+                conditionClass = 'bg-danger';
+                break;
+        }
+        return `<span class="badge ${conditionClass}">${escapeHtml(condition || 'Good')}</span>`;
+    }
+
+    function getStatusBadge(status) {
+        const stat = (status || 'available').toLowerCase();
+        let statusClass = 'bg-secondary';
+        switch (stat) {
+            case 'available':
+                statusClass = 'bg-success';
+                break;
+            case 'in_use':
+                statusClass = 'bg-primary';
+                break;
+            case 'maintenance':
+                statusClass = 'bg-warning';
+                break;
+            case 'reserved':
+                statusClass = 'bg-info';
+                break;
+            case 'disposed':
+                statusClass = 'bg-danger';
+                break;
+            case 'lost':
+                statusClass = 'bg-dark';
+                break;
+        }
+        return `<span class="badge ${statusClass}">${escapeHtml(status || 'Available')}</span>`;
+    }
+
+    function attachTableEventHandlers() {
+        // Quick view buttons
+        $('.quick-view-btn').off('click').on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const itemId = $(this).data('item-id');
+            if (itemId) {
+                fetchItemData(itemId).then(function(data) {
+                    if (data) {
+                        populateQuickViewModal(data);
+                        const quickActionsModal = document.getElementById('quickActionsModal');
+                        const modal = new bootstrap.Modal(quickActionsModal);
+                        modal.show();
+                        toastr.success('Item loaded successfully');
+                    }
+                }).catch(function(error) {
+                    toastr.error('Error loading item details');
+                });
+            }
+        });
+
+        // Edit buttons
+        $('.edit-item-btn').off('click').on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const itemId = $(this).data('item-id');
+            if (itemId) {
+                openEditItemModal(itemId);
+            }
+        });
+
+        // Select all checkbox
+        $('#selectAllItems').off('change').on('change', function() {
+            $('.item-checkbox').prop('checked', $(this).is(':checked'));
+            updateSelectedItems();
+        });
+
+        // Individual checkboxes
+        $('.item-checkbox').off('change').on('change', function() {
+            updateSelectedItems();
+        });
+    }
+
+
     function refreshDataTable() {
         if ($.fn.DataTable.isDataTable('#recentItemsTable')) {
             const table = $('#recentItemsTable').DataTable();
             if (table.settings()[0].oFeatures.bServerSide) {
                 table.ajax.reload(null, false);
             } else {
-                table.destroy();
-                setTimeout(initializeDataTable, 300);
+                table.ajax.reload();
             }
         } else {
             setTimeout(() => location.reload(), 500);
@@ -4281,7 +5450,7 @@ require_once 'views/partials/footer.php';
 
         if (file.size > 5 * 1024 * 1024) {
             toastr.error('File size must be less than 5MB');
-            $(this).val('');
+            $(e.target).val('');
             preview.hide();
             return;
         }
@@ -4289,7 +5458,7 @@ require_once 'views/partials/footer.php';
         const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
         if (!validTypes.includes(file.type)) {
             toastr.error('Please select a valid image file (JPG, PNG, GIF, WebP)');
-            $(this).val('');
+            $(e.target).val('');
             preview.hide();
             return;
         }
@@ -4436,7 +5605,9 @@ require_once 'views/partials/footer.php';
     function handleItemCheckbox() {
         const itemId = $(this).val();
         if ($(this).is(':checked')) {
-            selectedItems.push(itemId);
+            if (!selectedItems.includes(itemId)) {
+                selectedItems.push(itemId);
+            }
         } else {
             selectedItems = selectedItems.filter(id => id !== itemId);
         }
@@ -4473,15 +5644,50 @@ require_once 'views/partials/footer.php';
         }
     }
 
-    // ========== CHART FUNCTIONS ==========
+    // ========== EXCEL UPLOAD FUNCTIONS ==========
+    function initializeExcelUpload() {
+        $('#excelUploadForm').on('submit', function(e) {
+            e.preventDefault();
 
-    function initializeStatusChart() {
-        console.log('Initializing status chart with real data...');
-        // ... chart initialization code (keep your existing chart code)
-    }
+            const fileInput = $('#excelFile')[0];
+            if (!fileInput.files.length) {
+                toastr.warning('Please select an Excel file');
+                return;
+            }
 
-    function refreshStatusChart() {
-        // ... chart refresh code (keep your existing chart refresh code)
+            const formData = new FormData(this);
+
+            $.ajax({
+                url: 'api/upload_excel.php',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                beforeSend: function() {
+                    $('#uploadBtn').html('<i class="fas fa-spinner fa-spin me-1"></i> Uploading...');
+                    $('#uploadBtn').prop('disabled', true);
+                    toastr.info('Uploading file...');
+                },
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message || 'Items uploaded successfully!');
+                        $('#excelUploadModal').modal('hide');
+                        refreshDataTable(); // Refresh the table
+                    } else {
+                        toastr.error(response.message || 'Upload failed');
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Upload error:', xhr.responseText);
+                    toastr.error('Error uploading file');
+                },
+                complete: function() {
+                    $('#uploadBtn').html('<i class="fas fa-upload me-1"></i> Upload');
+                    $('#uploadBtn').prop('disabled', false);
+                    $('#excelFile').val('');
+                }
+            });
+        });
     }
 
     // ========== DOCUMENT READY ==========
@@ -4490,6 +5696,9 @@ require_once 'views/partials/footer.php';
 
         // Start the clock
         startClock();
+
+        // Initialize Excel upload
+        initializeExcelUpload();
 
         // Edit button click handler
         $(document).on('click', '.edit-item-btn', function(e) {
@@ -4573,8 +5782,10 @@ require_once 'views/partials/footer.php';
         $(document).on('change', '.item-checkbox', handleItemCheckbox);
         $('#bulkDeleteBtn').click(handleBulkDelete);
 
-        // Initialize chart
-        setTimeout(initializeStatusChart, 500);
+        // Initialize chart - only if canvas exists
+        if (document.getElementById('statusChart')) {
+            setTimeout(initializeStatusChart, 500);
+        }
 
         // Modal event handlers
         $('#quickActionsModal').on('hidden.bs.modal', () => delete window.currentItemData);

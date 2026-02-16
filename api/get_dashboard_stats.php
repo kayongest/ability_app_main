@@ -1,39 +1,15 @@
 <?php
-// api/quick_search.php
+// api/get_dashboard_stats.php
 header('Content-Type: application/json');
 require_once '../config/database.php';
 
 try {
     $db = getConnection();
-    $searchTerm = isset($_GET['q']) ? trim($_GET['q']) : '';
     
-    // Get search results
-    $results = [];
-    
-    if (strlen($searchTerm) >= 2) {
-        $likeTerm = '%' . $searchTerm . '%';
-        
-        // Search query
-        $stmt = $db->prepare("
-            SELECT id, item_name, serial_number, status, stock_location, image, description 
-            FROM items 
-            WHERE item_name LIKE ? 
-               OR serial_number LIKE ? 
-               OR brand LIKE ? 
-               OR model LIKE ? 
-               OR description LIKE ?
-            LIMIT 20
-        ");
-        $stmt->bind_param("sssss", $likeTerm, $likeTerm, $likeTerm, $likeTerm, $likeTerm);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        while ($row = $result->fetch_assoc()) {
-            $results[] = $row;
-        }
+    if (!$db) {
+        throw new Exception('Database connection failed');
     }
     
-    // Get statistics for dashboard
     $stats = [
         'total' => 0,
         'available' => 0,
@@ -45,7 +21,8 @@ try {
     // Get total items count
     $totalResult = $db->query("SELECT COUNT(*) as count FROM items");
     if ($totalResult) {
-        $stats['total'] = (int)$totalResult->fetch_assoc()['count'];
+        $row = $totalResult->fetch_assoc();
+        $stats['total'] = (int)$row['count'];
     }
     
     // Get status counts
@@ -74,16 +51,16 @@ try {
     ");
     if ($catResult) {
         while ($cat = $catResult->fetch_assoc()) {
-            $stats['categories'][] = $cat;
+            $stats['categories'][] = [
+                'category' => $cat['category'],
+                'count' => (int)$cat['count']
+            ];
         }
     }
     
     echo json_encode([
         'success' => true,
-        'items' => $results,
-        'stats' => $stats,  // This is the key part!
-        'count' => count($results),
-        'message' => strlen($searchTerm) < 2 ? 'Search term too short' : ''
+        'stats' => $stats
     ]);
     
 } catch (Exception $e) {

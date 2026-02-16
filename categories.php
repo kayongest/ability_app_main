@@ -39,6 +39,19 @@ function getDBConnection()
 // Initialize database connection
 $pdo = getDBConnection();
 
+// Function to check if a category has children
+function hasChildCategories($pdo, $categoryId)
+{
+    try {
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM categories WHERE parent_id = ?");
+        $stmt->execute([$categoryId]);
+        return $stmt->fetchColumn() > 0;
+    } catch (Exception $e) {
+        error_log("Error checking child categories: " . $e->getMessage());
+        return false;
+    }
+}
+
 $pageTitle = "Categories - aBility";
 $showBreadcrumb = true;
 $breadcrumbItems = [
@@ -47,42 +60,94 @@ $breadcrumbItems = [
     'Categories' => ''
 ];
 
+// Handle form submissions
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'] ?? '';
 
-// FIXED SECTION: Get all categories
+    try {
+        if ($action === 'add') {
+            // Generate slug from name
+            $name = trim($_POST['name']);
+            $slug = strtolower(trim(preg_replace('/[^a-zA-Z0-9-]+/', '-', $name)));
+            $description = trim($_POST['description'] ?? '');
+            $parent_id = !empty($_POST['parent_id']) ? (int)$_POST['parent_id'] : null;
+
+            $stmt = $pdo->prepare("INSERT INTO categories (name, slug, description, parent_id) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$name, $slug, $description, $parent_id]);
+
+            $_SESSION['success'] = "Category added successfully!";
+        } elseif ($action === 'edit') {
+            $id = (int)$_POST['id'];
+            $name = trim($_POST['name']);
+            $slug = strtolower(trim(preg_replace('/[^a-zA-Z0-9-]+/', '-', $name)));
+            $description = trim($_POST['description'] ?? '');
+            $parent_id = !empty($_POST['parent_id']) ? (int)$_POST['parent_id'] : null;
+
+            $stmt = $pdo->prepare("UPDATE categories SET name = ?, slug = ?, description = ?, parent_id = ? WHERE id = ?");
+            $stmt->execute([$name, $slug, $description, $parent_id, $id]);
+
+            $_SESSION['success'] = "Category updated successfully!";
+        } elseif ($action === 'delete') {
+            $id = (int)$_POST['id'];
+
+            // Check if category has children
+            $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM categories WHERE parent_id = ?");
+            $checkStmt->execute([$id]);
+            $childCount = $checkStmt->fetchColumn();
+
+            if ($childCount > 0) {
+                throw new Exception("Cannot delete category with sub-categories. Please reassign or delete sub-categories first.");
+            }
+
+            // Check if category is used in items
+            // This depends on your items table structure - adjust as needed
+            // $itemCheck = $pdo->prepare("SELECT COUNT(*) FROM items WHERE category_id = ?");
+            // $itemCheck->execute([$id]);
+            // $itemCount = $itemCheck->fetchColumn();
+            // if ($itemCount > 0) {
+            //     throw new Exception("Cannot delete category that is in use by items.");
+            // }
+
+            $stmt = $pdo->prepare("DELETE FROM categories WHERE id = ?");
+            $stmt->execute([$id]);
+
+            $_SESSION['success'] = "Category deleted successfully!";
+        }
+
+        // Redirect to refresh the page
+        header('Location: categories.php');
+        exit();
+    } catch (Exception $e) {
+        $error = $e->getMessage();
+    }
+}
+
+// FIXED SECTION: Get all categories with parent names and child counts
 $categories = [];
 try {
-    // Simple query without department_code (which doesn't exist in your table)
-    $sql = "SELECT * FROM categories ORDER BY parent_id, name";
+    // Get all categories with their parent names
+    $sql = "SELECT 
+                c1.*,
+                c2.name as parent_name,
+                c2.slug as parent_slug
+            FROM categories c1
+            LEFT JOIN categories c2 ON c1.parent_id = c2.id
+            ORDER BY c1.parent_id, c1.name";
+
     $stmt = $pdo->query($sql);
-    $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $categories = $stmt->fetchAll();
 
-    // Debug: Check if 'code' field exists
-    if (!empty($categories) && !isset($categories[0]['code'])) {
-        error_log("WARNING: 'code' field not found in categories table!");
-        // Check what fields we actually have
-        if (isset($categories[0])) {
-            error_log("Available fields: " . implode(', ', array_keys($categories[0])));
-        }
-    }
-
-    // Add parent names
+    // Generate a code/slug for display purposes and check for children
     foreach ($categories as &$category) {
-        if (!empty($category['parent_id'])) {
-            try {
-                $parentStmt = $pdo->prepare("SELECT name FROM categories WHERE id = ?");
-                $parentStmt->execute([$category['parent_id']]);
-                $category['parent_name'] = $parentStmt->fetchColumn() ?: 'N/A';
-            } catch (Exception $e) {
-                $category['parent_name'] = 'N/A';
-            }
+        // Use slug as code, or generate from name if slug is empty
+        if (empty($category['slug'])) {
+            $category['display_code'] = strtoupper(substr(preg_replace('/[^a-zA-Z0-9]+/', '', $category['name']), 0, 8));
         } else {
-            $category['parent_name'] = 'N/A';
+            $category['display_code'] = strtoupper($category['slug']);
         }
 
-        // Ensure 'code' field exists (use 'id' as fallback)
-        if (!isset($category['code'])) {
-            $category['code'] = 'CAT-' . $category['id'];
-        }
+        // Check if this category has any children
+        $category['has_children'] = hasChildCategories($pdo, $category['id']);
     }
     unset($category);
 } catch (Exception $e) {
@@ -90,20 +155,11 @@ try {
     error_log($error);
 }
 
-// Get all departments for dropdown
-$departments = [];
-try {
-    $deptStmt = $pdo->query("SELECT code, name FROM departments WHERE is_active = 1 ORDER BY name");
-    $departments = $deptStmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (Exception $e) {
-    error_log("Error loading departments: " . $e->getMessage());
-}
-
-// Get parent categories for dropdown
+// Get parent categories for dropdown (only root categories)
 $parentCategories = [];
 try {
-    $parentStmt = $pdo->query("SELECT id, name, code FROM categories WHERE parent_id IS NULL ORDER BY name");
-    $parentCategories = $parentStmt->fetchAll(PDO::FETCH_ASSOC);
+    $parentStmt = $pdo->query("SELECT id, name, slug FROM categories WHERE parent_id IS NULL ORDER BY name");
+    $parentCategories = $parentStmt->fetchAll();
 } catch (Exception $e) {
     error_log("Error loading parent categories: " . $e->getMessage());
 }
@@ -111,24 +167,27 @@ try {
 // Get item counts for each category
 $itemCounts = [];
 try {
-    // Try different possible column names for category reference in items table
-    $possibleColumns = ['category_code', 'category_id', 'cat_code', 'cat_id', 'category'];
+    // Check if items table has a category_id or category field
+    // Adjust this based on your actual items table structure
+    $tableCheck = $pdo->query("SHOW TABLES LIKE 'items'");
+    if ($tableCheck->rowCount() > 0) {
+        // Try different possible column names
+        $possibleColumns = ['category_id', 'category', 'cat_id'];
 
-    foreach ($possibleColumns as $col) {
-        try {
-            // Check if column exists
-            $checkStmt = $pdo->prepare("SHOW COLUMNS FROM items LIKE ?");
-            $checkStmt->execute([$col]);
-            if ($checkStmt->rowCount() > 0) {
-                $countStmt = $pdo->query("SELECT $col, COUNT(*) as count FROM items WHERE $col IS NOT NULL AND $col != '' GROUP BY $col");
-                $countResults = $countStmt->fetchAll(PDO::FETCH_ASSOC);
-                foreach ($countResults as $row) {
-                    $itemCounts[$row[$col]] = $row['count'];
+        foreach ($possibleColumns as $col) {
+            try {
+                $colCheck = $pdo->query("SHOW COLUMNS FROM items LIKE '$col'");
+                if ($colCheck->rowCount() > 0) {
+                    $countStmt = $pdo->query("SELECT $col, COUNT(*) as count FROM items WHERE $col IS NOT NULL GROUP BY $col");
+                    $countResults = $countStmt->fetchAll();
+                    foreach ($countResults as $row) {
+                        $itemCounts[$row[$col]] = $row['count'];
+                    }
+                    break;
                 }
-                break;
+            } catch (Exception $e) {
+                continue;
             }
-        } catch (Exception $e) {
-            continue;
         }
     }
 } catch (Exception $e) {
@@ -177,19 +236,18 @@ require_once 'views/partials/header.php';
                 <table class="table table-bordered table-hover" id="categoriesTable">
                     <thead class="table-light">
                         <tr>
-                            <th>Code</th>
+                            <th>Code/Slug</th>
                             <th>Category Name</th>
                             <th>Description</th>
                             <th>Parent Category</th>
                             <th>Items Count</th>
-                            <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($categories)): ?>
                             <tr>
-                                <td colspan="7" class="text-center py-4">
+                                <td colspan="6" class="text-center py-4">
                                     <i class="fas fa-list fa-2x text-muted mb-3"></i>
                                     <h5>No Categories Found</h5>
                                     <p class="text-muted">Add your first category to get started</p>
@@ -199,7 +257,7 @@ require_once 'views/partials/header.php';
                             <?php foreach ($categories as $category): ?>
                                 <tr>
                                     <td>
-                                        <span class="badge bg-primary"><?php echo htmlspecialchars($category['code']); ?></span>
+                                        <span class="badge bg-primary"><?php echo htmlspecialchars($category['display_code']); ?></span>
                                     </td>
                                     <td>
                                         <strong><?php echo htmlspecialchars($category['name']); ?></strong>
@@ -208,32 +266,33 @@ require_once 'views/partials/header.php';
                                         <?php echo htmlspecialchars($category['description'] ?? 'No description'); ?>
                                     </td>
                                     <td>
-                                        <?php echo htmlspecialchars($category['parent_name']); ?>
+                                        <?php
+                                        if ($category['parent_id']) {
+                                            echo htmlspecialchars($category['parent_name'] ?? 'Unknown');
+                                        } else {
+                                            echo '<em class="text-muted">Root Category</em>';
+                                        }
+                                        ?>
                                     </td>
                                     <td>
-                                        <span class="badge bg-info"><?php echo $itemCounts[$category['code']] ?? 0; ?> items</span>
-                                    </td>
-                                    <td>
-                                        <?php if ($category['is_active']): ?>
-                                            <span class="badge bg-success">Active</span>
-                                        <?php else: ?>
-                                            <span class="badge bg-secondary">Inactive</span>
-                                        <?php endif; ?>
+                                        <?php
+                                        $count = $itemCounts[$category['id']] ?? $itemCounts[$category['name']] ?? 0;
+                                        ?>
+                                        <span class="badge bg-info"><?php echo $count; ?> items</span>
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm">
                                             <button class="btn btn-warning edit-category"
                                                 data-id="<?php echo $category['id']; ?>"
-                                                data-code="<?php echo htmlspecialchars($category['code']); ?>"
                                                 data-name="<?php echo htmlspecialchars($category['name']); ?>"
                                                 data-description="<?php echo htmlspecialchars($category['description'] ?? ''); ?>"
-                                                data-parent="<?php echo $category['parent_id'] ?? ''; ?>"
-                                                data-active="<?php echo $category['is_active']; ?>">
+                                                data-parent="<?php echo $category['parent_id'] ?? ''; ?>">
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                             <button class="btn btn-danger delete-category"
                                                 data-id="<?php echo $category['id']; ?>"
-                                                data-name="<?php echo htmlspecialchars($category['name']); ?>">
+                                                data-name="<?php echo htmlspecialchars($category['name']); ?>"
+                                                <?php echo ($category['has_children']) ? 'disabled title="Cannot delete category with sub-categories"' : ''; ?>>
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </div>
@@ -263,16 +322,10 @@ require_once 'views/partials/header.php';
                     <input type="hidden" name="action" value="add">
 
                     <div class="mb-3">
-                        <label for="code" class="form-label">Category Code *</label>
-                        <input type="text" class="form-control" id="code" name="code"
-                            required maxlength="10" placeholder="e.g., IT-EQ">
-                        <div class="form-text">Unique code (max 10 characters, will be converted to uppercase)</div>
-                    </div>
-
-                    <div class="mb-3">
                         <label for="name" class="form-label">Category Name *</label>
                         <input type="text" class="form-control" id="name" name="name"
                             required placeholder="e.g., IT Equipment">
+                        <div class="form-text">This will automatically generate a URL-friendly slug</div>
                     </div>
 
                     <div class="mb-3">
@@ -281,22 +334,17 @@ require_once 'views/partials/header.php';
                             rows="3" placeholder="Brief description of this category"></textarea>
                     </div>
 
-
                     <div class="mb-3">
                         <label for="parent_id" class="form-label">Parent Category</label>
                         <select class="form-control" id="parent_id" name="parent_id">
-                            <option value="">-- No Parent (Root Category) --</option>
+                            <option value="">-- Root Category (No Parent) --</option>
                             <?php foreach ($parentCategories as $parent): ?>
                                 <option value="<?php echo $parent['id']; ?>">
-                                    <?php echo htmlspecialchars($parent['name']); ?> (<?php echo htmlspecialchars($parent['code']); ?>)
+                                    <?php echo htmlspecialchars($parent['name']); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
-                    </div>
-
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="is_active" name="is_active" checked>
-                        <label class="form-check-label" for="is_active">Active Category</label>
+                        <div class="form-text">Leave empty to create a top-level category</div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -326,12 +374,6 @@ require_once 'views/partials/header.php';
                     <input type="hidden" name="id" id="edit_id">
 
                     <div class="mb-3">
-                        <label for="edit_code" class="form-label">Category Code *</label>
-                        <input type="text" class="form-control" id="edit_code" name="code"
-                            required maxlength="10">
-                    </div>
-
-                    <div class="mb-3">
                         <label for="edit_name" class="form-label">Category Name *</label>
                         <input type="text" class="form-control" id="edit_name" name="name" required>
                     </div>
@@ -341,36 +383,17 @@ require_once 'views/partials/header.php';
                         <textarea class="form-control" id="edit_description" name="description" rows="3"></textarea>
                     </div>
 
-                    <!-- REMOVE THIS ENTIRE DEPARTMENT SECTION -->
-                    <!--
-                    <div class="mb-3">
-                        <label for="edit_department_code" class="form-label">Department</label>
-                        <select class="form-control" id="edit_department_code" name="department_code">
-                            <option value="">-- Select Department --</option>
-                            <?php foreach ($departments as $dept): ?>
-                                <option value="<?php echo htmlspecialchars($dept['code']); ?>">
-                                    <?php echo htmlspecialchars($dept['name']); ?> (<?php echo htmlspecialchars($dept['code']); ?>)
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    -->
-
                     <div class="mb-3">
                         <label for="edit_parent_id" class="form-label">Parent Category</label>
                         <select class="form-control" id="edit_parent_id" name="parent_id">
-                            <option value="">-- No Parent (Root Category) --</option>
+                            <option value="">-- Root Category (No Parent) --</option>
                             <?php foreach ($parentCategories as $parent): ?>
                                 <option value="<?php echo $parent['id']; ?>">
-                                    <?php echo htmlspecialchars($parent['name']); ?> (<?php echo htmlspecialchars($parent['code']); ?>)
+                                    <?php echo htmlspecialchars($parent['name']); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
-                    </div>
-
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="edit_is_active" name="is_active">
-                        <label class="form-check-label" for="edit_is_active">Active Category</label>
+                        <div class="form-text">Leave empty for top-level category</div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -402,7 +425,7 @@ require_once 'views/partials/header.php';
                     <p>Are you sure you want to delete the category: <strong id="delete_name"></strong>?</p>
                     <p class="text-danger">
                         <i class="fas fa-exclamation-circle me-2"></i>
-                        This action cannot be undone. Any items assigned to this category will need to be reassigned.
+                        This action cannot be undone. Items in this category may need to be reassigned.
                     </p>
                 </div>
                 <div class="modal-footer">
@@ -422,18 +445,14 @@ require_once 'views/partials/header.php';
         document.querySelectorAll('.edit-category').forEach(button => {
             button.addEventListener('click', function() {
                 const id = this.dataset.id;
-                const code = this.dataset.code;
                 const name = this.dataset.name;
                 const description = this.dataset.description;
                 const parent = this.dataset.parent;
-                const isActive = this.dataset.active === '1';
 
                 document.getElementById('edit_id').value = id;
-                document.getElementById('edit_code').value = code;
                 document.getElementById('edit_name').value = name;
                 document.getElementById('edit_description').value = description;
                 document.getElementById('edit_parent_id').value = parent;
-                document.getElementById('edit_is_active').checked = isActive;
 
                 const editModal = new bootstrap.Modal(document.getElementById('editCategoryModal'));
                 editModal.show();
@@ -454,10 +473,8 @@ require_once 'views/partials/header.php';
             });
         });
 
-        // Initialize DataTable with error handling
-        // Initialize DataTable - Minimal version
+        // Initialize DataTable
         if ($.fn.DataTable) {
-            // Wait a bit to ensure DOM is fully loaded
             setTimeout(function() {
                 try {
                     var table = $('#categoriesTable').DataTable({
@@ -466,11 +483,13 @@ require_once 'views/partials/header.php';
                         "ordering": true,
                         "info": true,
                         "autoWidth": false,
-                        "responsive": true
+                        "responsive": true,
+                        "order": [
+                            [1, 'asc']
+                        ] // Sort by name by default
                     });
                 } catch (e) {
                     console.error('DataTables error:', e);
-                    // If DataTables fails, remove the initialization and keep basic table
                     $('#categoriesTable').removeAttr('id').addClass('table-striped');
                 }
             }, 100);
@@ -490,6 +509,10 @@ require_once 'views/partials/header.php';
     .badge {
         font-size: 0.85em;
         padding: 4px 8px;
+    }
+
+    .btn-group-sm .btn {
+        padding: 0.25rem 0.5rem;
     }
 </style>
 

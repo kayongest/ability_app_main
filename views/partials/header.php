@@ -797,6 +797,14 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
                         </a>
                     </li>
 
+                    <!-- Stock Locations -->
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo ($current_page == 'stock_locations.php') ? 'active' : ''; ?>"
+                            href="<?php echo BASE_URL; ?>stock_locations.php">
+                            <i class="fas fa-warehouse me-1"></i> Stock Locations
+                        </a>
+                    </li>
+
                     <!-- Batch History -->
                     <li class="nav-item">
                         <a class="nav-link <?php echo ($current_page == 'batch_history.php') ? 'active' : ''; ?>"

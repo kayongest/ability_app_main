@@ -51,14 +51,23 @@ require_once __DIR__ . '/../partials/header.php';
     <div class="card shadow mb-4">
         <div class="card-body">
             <div class="row align-items-center">
-                <div class="col-md-4 mb-3 mb-md-0">
+                <div class="col-md-6 mb-3 mb-md-0">
                     <div class="input-group">
-                        <span class="input-group-text"><i class="fas fa-search"></i></span>
-                        <input type="text" class="form-control" id="globalSearch" placeholder="Search by name, serial, category...">
-                        <button class="btn btn-primary" type="button" onclick="applyFilters()">Search</button>
+                        <span class="input-group-text bg-white border-end-0">
+                            <i class="fas fa-search text-primary"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0 border-end-0" id="globalSearch"
+                            placeholder="Search by #, ID, Item Name, Serial Number, Category, Status, or Location...">
+                        <button class="btn btn-primary" type="button" onclick="applyFilters()">
+                            <i class="fas fa-search me-1"></i>Search
+                        </button>
+                    </div>
+                    <div class="form-text text-muted small mt-1">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Search in: #, ID, Item Name, Serial Number, Category, Status, Location
                     </div>
                 </div>
-                <div class="col-md-3 mb-3 mb-md-0">
+                <div class="col-md-2 mb-3 mb-md-0">
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-list-ol"></i></span>
                         <select class="form-select" id="pageLength" onchange="changePageLength()">
@@ -67,10 +76,12 @@ require_once __DIR__ . '/../partials/header.php';
                             <option value="16">16 per page</option>
                             <option value="20">20 per page</option>
                             <option value="24">24 per page</option>
+                            <option value="50">50 per page</option>
+                            <option value="100">100 per page</option>
                         </select>
                     </div>
                 </div>
-                <div class="col-md-5">
+                <div class="col-md-4">
                     <div class="d-flex justify-content-end gap-2">
                         <button type="button" class="btn btn-outline-secondary" onclick="refreshTable()" title="Refresh">
                             <i class="fas fa-sync-alt"></i>
@@ -448,6 +459,16 @@ require_once __DIR__ . '/../partials/header.php';
         justify-content: space-between;
     }
 
+    /* Search input styling */
+    #globalSearch:focus {
+        box-shadow: none;
+        border-color: #1f5e4f;
+    }
+
+    #globalSearch:focus+.btn-primary {
+        border-color: #1f5e4f;
+    }
+
     @media (max-width: 768px) {
         .action-buttons {
             flex-direction: column;
@@ -495,9 +516,11 @@ require_once __DIR__ . '/../partials/header.php';
     let currentPage = 1;
     let itemsPerPage = 8;
     let totalPages = 1;
+    let totalItems = 0;
     let selectedItems = new Set();
     let statsModal = null;
     let currentFilters = {};
+    let searchTimeout = null;
 
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize Bootstrap modal
@@ -514,9 +537,18 @@ require_once __DIR__ . '/../partials/header.php';
     });
 
     function setupEventListeners() {
+        // Real-time search with debounce
+        $('#globalSearch').on('input', function() {
+            if (searchTimeout) clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(applyFilters, 500);
+        });
+
         // Enter key in global search
         $('#globalSearch').on('keypress', function(e) {
-            if (e.key === 'Enter') applyFilters();
+            if (e.key === 'Enter') {
+                clearTimeout(searchTimeout);
+                applyFilters();
+            }
         });
 
         // Filter changes
@@ -754,6 +786,8 @@ require_once __DIR__ . '/../partials/header.php';
                     <option value="16" ${itemsPerPage === 16 ? 'selected' : ''}>16 per page</option>
                     <option value="20" ${itemsPerPage === 20 ? 'selected' : ''}>20 per page</option>
                     <option value="24" ${itemsPerPage === 24 ? 'selected' : ''}>24 per page</option>
+                    <option value="50" ${itemsPerPage === 50 ? 'selected' : ''}>50 per page</option>
+                    <option value="100" ${itemsPerPage === 100 ? 'selected' : ''}>100 per page</option>
                 </select>
             </div>
         `;
