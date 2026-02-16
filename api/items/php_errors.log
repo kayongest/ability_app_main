@@ -1,0 +1,4 @@
+[08-Jan-2026 00:33:41 Africa/Kigali] PHP Fatal error:  Uncaught Error: Call to undefined function getConnection() in C:\xampp\htdocs\ability_app_main\api\items\create.php:39
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\ability_app_main\api\items\create.php on line 39

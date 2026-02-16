@@ -1,0 +1,134 @@
+2026-02-12 22:17:51 - Request received
+2026-02-12 22:17:51 - POST data: {"technician":{"id":0,"username":"kraul","full_name":"Kayonga Raul","email":"kayonga.raul@ab.com","department":"IT Ops","role":"admin","verified_at":"2026-02-12 22:11:50"},"stock_controller":{"id":"0","username":"Keiraul","full_name":"Keiraul"},"items":[{"id":2,"name":"Item 2","serial_number":"SN-2","status":"available","quantity":1,"category":"Equipment"},{"id":10,"name":"Item 10","serial_number":"SN-10","status":"available","quantity":1,"category":"Equipment"}],"jobDetails":{"stockLocation":"KCC","eventName":"Hibiscus","jobSheet":"JS-00254","projectManager":"Hirwa Aubin","vehicleNumber":"RAH 847","driverName":"Valentin","batchAction":"transfer","batchLocation":"KCC","batchNotes":"","approvalNotes":"","requestedBy":"Kayonga Raul","submittedBy":"Keiraul"},"authentication":{"verified_by":"Keiraul","verification_time":"2026-02-12T21:17:51.406Z","verification_method":"password_verification"},"timestamp":"2026-02-12T21:17:51.406Z","batchId":"BATCH-071406"}
+2026-02-12 22:17:51 - User ID: 0
+2026-02-12 22:17:51 - Item count: 2
+2026-02-12 22:17:51 - Batch ID: BATCH-20260212221751-698e437f6f98f
+2026-02-12 22:17:51 - Batch SQL: INSERT INTO batch_scans (
+            batch_id, batch_name, total_items, unique_items, 
+            submitted_by, requested_by, technician_name,
+            action_applied, location_applied, notes, 
+            status, approval_status, submitted_at
+        ) VALUES (
+            'BATCH-20260212221751-698e437f6f98f', 'Batch 2026-02-12 22:17:51', 2, 2,
+            0, 0, 'Kayonga Raul',
+            'transfer', 'KCC', '',
+            'completed', 'pending', NOW()
+        )
+2026-02-12 22:17:51 - ERROR: Batch insert failed: Duplicate entry '0' for key 'PRIMARY' - SQL: INSERT INTO batch_scans (
+            batch_id, batch_name, total_items, unique_items, 
+            submitted_by, requested_by, technician_name,
+            action_applied, location_applied, notes, 
+            status, approval_status, submitted_at
+        ) VALUES (
+            'BATCH-20260212221751-698e437f6f98f', 'Batch 2026-02-12 22:17:51', 2, 2,
+            0, 0, 'Kayonga Raul',
+            'transfer', 'KCC', '',
+            'completed', 'pending', NOW()
+        )
+2026-02-12 22:17:51 - Script ended
+
+2026-02-12 22:23:27 - Request received
+2026-02-12 22:23:27 - POST data: {"technician":{"id":0,"username":"kraul","full_name":"Kayonga Raul","email":"kayonga.raul@ab.com","department":"IT Ops","role":"admin","verified_at":"2026-02-12 22:11:50"},"stock_controller":{"id":"0","username":"Keiraul","full_name":"Keiraul"},"items":[{"id":2,"name":"Item 2","serial_number":"SN-2","status":"available","quantity":1,"category":"Equipment"},{"id":10,"name":"Item 10","serial_number":"SN-10","status":"available","quantity":1,"category":"Equipment"}],"jobDetails":{"stockLocation":"KCC","eventName":"Hibiscus","jobSheet":"JS-00254","projectManager":"Hirwa Aubin","vehicleNumber":"RAH 847","driverName":"Valentin","batchAction":"transfer","batchLocation":"KCC","batchNotes":"","approvalNotes":"","requestedBy":"Kayonga Raul","submittedBy":"Keiraul"},"authentication":{"verified_by":"Keiraul","verification_time":"2026-02-12T21:23:27.303Z","verification_method":"password_verification"},"timestamp":"2026-02-12T21:23:27.303Z","batchId":"BATCH-407303"}
+2026-02-12 22:23:27 - User ID: 0
+2026-02-12 22:23:27 - Item count: 2
+2026-02-12 22:23:27 - Batch ID: BATCH-20260212222327-698e44cf58220
+2026-02-12 22:23:27 - User ID from session: NULL
+2026-02-12 22:23:27 - Technician ID: NULL
+2026-02-12 22:23:27 - Batch SQL: INSERT INTO batch_scans (
+        batch_id, batch_name, total_items, unique_items, 
+        submitted_by, requested_by, technician_name,
+        action_applied, location_applied, notes, 
+        status, approval_status, submitted_at
+    ) VALUES (
+        'BATCH-20260212222327-698e44cf58220', 'Batch 2026-02-12 22:23:27', 2, 2,
+        NULL, 
+        NULL, 
+        'Kayonga Raul',
+        'transfer', 'KCC', '',
+        'completed', 'pending', NOW()
+    )
+2026-02-12 22:23:27 - ERROR: Batch insert failed: Duplicate entry '0' for key 'PRIMARY' - SQL: INSERT INTO batch_scans (
+        batch_id, batch_name, total_items, unique_items, 
+        submitted_by, requested_by, technician_name,
+        action_applied, location_applied, notes, 
+        status, approval_status, submitted_at
+    ) VALUES (
+        'BATCH-20260212222327-698e44cf58220', 'Batch 2026-02-12 22:23:27', 2, 2,
+        NULL, 
+        NULL, 
+        'Kayonga Raul',
+        'transfer', 'KCC', '',
+        'completed', 'pending', NOW()
+    )
+2026-02-12 22:23:27 - Script ended
+
+2026-02-12 22:23:34 - Request received
+2026-02-12 22:23:34 - POST data: {"technician":{"id":0,"username":"kraul","full_name":"Kayonga Raul","email":"kayonga.raul@ab.com","department":"IT Ops","role":"admin","verified_at":"2026-02-12 22:11:50"},"stock_controller":{"id":"0","username":"Keiraul","full_name":"Keiraul"},"items":[{"id":2,"name":"Item 2","serial_number":"SN-2","status":"available","quantity":1,"category":"Equipment"},{"id":10,"name":"Item 10","serial_number":"SN-10","status":"available","quantity":1,"category":"Equipment"}],"jobDetails":{"stockLocation":"KCC","eventName":"Hibiscus","jobSheet":"JS-00254","projectManager":"Hirwa Aubin","vehicleNumber":"RAH 847","driverName":"Valentin","batchAction":"transfer","batchLocation":"KCC","batchNotes":"","approvalNotes":"","requestedBy":"Kayonga Raul","submittedBy":"Keiraul"},"authentication":{"verified_by":"Keiraul","verification_time":"2026-02-12T21:23:34.802Z","verification_method":"password_verification"},"timestamp":"2026-02-12T21:23:34.802Z","batchId":"BATCH-414802"}
+2026-02-12 22:23:34 - User ID: 0
+2026-02-12 22:23:34 - Item count: 2
+2026-02-12 22:23:34 - Batch ID: BATCH-20260212222334-698e44d6c84d3
+2026-02-12 22:23:34 - User ID from session: NULL
+2026-02-12 22:23:34 - Technician ID: NULL
+2026-02-12 22:23:34 - Batch SQL: INSERT INTO batch_scans (
+        batch_id, batch_name, total_items, unique_items, 
+        submitted_by, requested_by, technician_name,
+        action_applied, location_applied, notes, 
+        status, approval_status, submitted_at
+    ) VALUES (
+        'BATCH-20260212222334-698e44d6c84d3', 'Batch 2026-02-12 22:23:34', 2, 2,
+        NULL, 
+        NULL, 
+        'Kayonga Raul',
+        'transfer', 'KCC', '',
+        'completed', 'pending', NOW()
+    )
+2026-02-12 22:23:34 - ERROR: Batch insert failed: Duplicate entry '0' for key 'PRIMARY' - SQL: INSERT INTO batch_scans (
+        batch_id, batch_name, total_items, unique_items, 
+        submitted_by, requested_by, technician_name,
+        action_applied, location_applied, notes, 
+        status, approval_status, submitted_at
+    ) VALUES (
+        'BATCH-20260212222334-698e44d6c84d3', 'Batch 2026-02-12 22:23:34', 2, 2,
+        NULL, 
+        NULL, 
+        'Kayonga Raul',
+        'transfer', 'KCC', '',
+        'completed', 'pending', NOW()
+    )
+2026-02-12 22:23:34 - Script ended
+
+2026-02-12 22:23:56 - Request received
+2026-02-12 22:23:56 - POST data: {"technician":{"id":0,"username":"kraul","full_name":"Kayonga Raul","email":"kayonga.raul@ab.com","department":"IT Ops","role":"admin","verified_at":"2026-02-12 22:11:50"},"stock_controller":{"id":"0","username":"Keiraul","full_name":"Keiraul"},"items":[{"id":2,"name":"Item 2","serial_number":"SN-2","status":"available","quantity":1,"category":"Equipment"},{"id":10,"name":"Item 10","serial_number":"SN-10","status":"available","quantity":1,"category":"Equipment"}],"jobDetails":{"stockLocation":"KCC","eventName":"Hibiscus","jobSheet":"JS-00254","projectManager":"Hirwa Aubin","vehicleNumber":"RAH 847","driverName":"Valentin","batchAction":"transfer","batchLocation":"KCC","batchNotes":"","approvalNotes":"","requestedBy":"Kayonga Raul","submittedBy":"Keiraul"},"authentication":{"verified_by":"Keiraul","verification_time":"2026-02-12T21:23:56.603Z","verification_method":"password_verification"},"timestamp":"2026-02-12T21:23:56.604Z","batchId":"BATCH-436604"}
+2026-02-12 22:23:56 - User ID: 0
+2026-02-12 22:23:56 - Item count: 2
+2026-02-12 22:23:56 - Batch ID: BATCH-20260212222356-698e44ec9518e
+2026-02-12 22:23:56 - User ID from session: NULL
+2026-02-12 22:23:56 - Technician ID: NULL
+2026-02-12 22:23:56 - Batch SQL: INSERT INTO batch_scans (
+        batch_id, batch_name, total_items, unique_items, 
+        submitted_by, requested_by, technician_name,
+        action_applied, location_applied, notes, 
+        status, approval_status, submitted_at
+    ) VALUES (
+        'BATCH-20260212222356-698e44ec9518e', 'Batch 2026-02-12 22:23:56', 2, 2,
+        NULL, 
+        NULL, 
+        'Kayonga Raul',
+        'transfer', 'KCC', '',
+        'completed', 'pending', NOW()
+    )
+2026-02-12 22:23:56 - ERROR: Batch insert failed: Duplicate entry '0' for key 'PRIMARY' - SQL: INSERT INTO batch_scans (
+        batch_id, batch_name, total_items, unique_items, 
+        submitted_by, requested_by, technician_name,
+        action_applied, location_applied, notes, 
+        status, approval_status, submitted_at
+    ) VALUES (
+        'BATCH-20260212222356-698e44ec9518e', 'Batch 2026-02-12 22:23:56', 2, 2,
+        NULL, 
+        NULL, 
+        'Kayonga Raul',
+        'transfer', 'KCC', '',
+        'completed', 'pending', NOW()
+    )
+2026-02-12 22:23:56 - Script ended
+

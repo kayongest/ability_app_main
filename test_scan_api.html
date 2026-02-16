@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Test Scan API</title>
+</head>
+
+<body>
+    <h1>Test Scan API Endpoint</h1>
+
+    <div>
+        <label>Item ID:</label>
+        <input type="number" id="itemId" value="17">
+    </div>
+
+    <div>
+        <label>Scan Type:</label>
+        <select id="scanType">
+            <option value="check_in">Check In</option>
+            <option value="check_out">Check Out</option>
+        </select>
+    </div>
+
+    <div>
+        <label>Location:</label>
+        <input type="text" id="location" value="Test Location">
+    </div>
+
+    <div>
+        <label>Notes:</label>
+        <textarea id="notes">Test scan from API tester</textarea>
+    </div>
+
+    <button onclick="testApi()">Test API</button>
+
+    <div id="result"
+        style="margin-top: 20px; padding: 10px; border: 1px solid #ccc; white-space: pre-wrap; font-family: monospace;">
+    </div>
+
+    <script>
+        async function testApi() {
+            const data = {
+                item_id: parseInt(document.getElementById('itemId').value),
+                scan_type: document.getElementById('scanType').value,
+                location: document.getElementById('location').value,
+                notes: document.getElementById('notes').value,
+                scanned_data: JSON.stringify({ test: true, timestamp: new Date().toISOString() })
+            };
+
+            try {
+                const response = await fetch('api/scan/log.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const text = await response.text();
+                document.getElementById('result').innerHTML =
+                    '<h3>Raw Response:</h3>' + escapeHtml(text);
+
+                // Try to parse as JSON
+                try {
+                    const json = JSON.parse(text);
+                    console.log('Parsed JSON:', json);
+                    document.getElementById('result').innerHTML +=
+                        '<h3>Parsed JSON:</h3>' + escapeHtml(JSON.stringify(json, null, 2));
+                } catch (e) {
+                    console.log('Not valid JSON');
+                    document.getElementById('result').innerHTML +=
+                        '<h3 style="color: red;">ERROR: Not valid JSON!</h3>';
+                }
+
+            } catch (error) {
+                document.getElementById('result').innerHTML =
+                    '<h3>Error:</h3>' + error.message;
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+
+</html>
+
+
+
+
+
+<!-- Scan out successful. With notes to change the date of the equipment return. -->
+ <!-- Not the same person as the check-in scan. -->
+  <!-- Duration of the changed date of return -->
+
+    <!-- Alert sent to the original borrower of the equipment that the return date has been changed. -->
+     
+   <!-- Progress bar / timer assigned to the equipment for the duration until the new return date.  -->
+
+    <!-- size of the QrCode. -->
+     - Automatic Report generation for all equipment scanned in a day.
+    <!-- Report sent to the admin email. -->
+     - Weekly summary of all equipment scanned in and out.
+    <!-- Report includes any changes made to return dates. -->
+     - Daily alert for equipment due to be returned that day.
+    <!-- Alert sent to the admin email. -->
+     - Backup of all scan logs every 24 hours.
+    <!-- Backup stored in a secure location. -->
+    <!-- Backup includes all scan data and associated metadata. -->
+     - Backup process runs automatically without user intervention.
+    <!-- Backup verified for integrity after creation. -->
+    <!-- size of the QrCode. -->
+     - Daily, Weekly, Monthly options for report generation.
+    <!-- Custom date range selection for reports. -->
+     Confirmmation for Item(s) request - Approval

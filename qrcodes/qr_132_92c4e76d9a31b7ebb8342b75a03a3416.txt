@@ -1,0 +1,12 @@
+ITEM INFORMATION:
+ID: 132
+Name: Lenovo ThinkPad
+Serial: LEN-77088677-497
+Category: Video
+Brand/Model: Lenovo Ideapad Gaming
+Status: available
+Condition: good
+QR Generated: 2026-01-16 17:20:52
+
+Full Data:
+{"id":132,"name":"Lenovo ThinkPad","serial":"LEN-77088677-497","category":"Video","added":"2026-01-16 17:20:52"}
