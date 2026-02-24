@@ -55,10 +55,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['user_id'] = $user['id'];
                     $_SESSION['username'] = $user['username'];
                     $_SESSION['email'] = $user['email'];
-                    $_SESSION['role'] = $user['role'];
+                    $_SESSION['role'] = $user['role']; // Primary role
+                    $_SESSION['user_role'] = $user['role']; // For backward compatibility
                     $_SESSION['department'] = $user['department'];
 
-                    $debug_info[] = "Session variables set";
+                    // Get all roles for this user (from both users.role and user_roles)
+                    $roles = [$user['role']]; // Start with primary role
+
+                    // Check for additional roles in user_roles table
+                    $roles_stmt = $conn->prepare("SELECT role FROM user_roles WHERE user_id = ?");
+                    if ($roles_stmt) {
+                        $roles_stmt->bind_param("i", $user['id']);
+                        $roles_stmt->execute();
+                        $roles_result = $roles_stmt->get_result();
+                        while ($role_row = $roles_result->fetch_assoc()) {
+                            if (!in_array($role_row['role'], $roles)) {
+                                $roles[] = $role_row['role'];
+                            }
+                        }
+                        $roles_stmt->close();
+                    }
+
+                    $_SESSION['user_roles'] = $roles; // Store all roles in session
+                    $debug_info[] = "User roles: " . implode(', ', $roles);
                     $debug_info[] = "Redirecting to dashboard";
 
                     // Redirect to dashboard

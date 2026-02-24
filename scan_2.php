@@ -2579,26 +2579,231 @@ echo '<!-- DEBUG: User Role: ' . htmlspecialchars($_SESSION['user_role'] ?? 'Not
         }
     }
 
-    function resetTechnicianAuthentication() {
-        console.log('🔓 Resetting technician authentication UI');
-        showAuthenticationSection();
-        const passwordInput = document.getElementById('technicianPassword');
+    // Add this function to clear all form fields
+    function clearBatchForm() {
+        console.log('🧹 Clearing batch form fields...');
+
+        // Clear all input fields
+        const fieldsToClear = [
+            'stockLocation', 'eventName', 'jobSheet', 'projectManager',
+            'vehicleNumber', 'driverName', 'batchAction', 'batchLocation',
+            'batchNotes', 'approvalNotes'
+        ];
+
+        fieldsToClear.forEach(fieldId => {
+            const element = document.getElementById(fieldId);
+            if (element) {
+                if (element.tagName === 'SELECT') {
+                    // Set select to first option or default
+                    if (fieldId === 'stockLocation') element.value = 'KCC';
+                    else if (fieldId === 'batchAction') element.value = '';
+                    else element.selectedIndex = 0;
+                } else {
+                    // Clear text inputs and textareas
+                    element.value = '';
+                }
+            }
+        });
+
+        // Reset specific fields to defaults
+        const stockLocation = document.getElementById('stockLocation');
+        if (stockLocation) stockLocation.value = 'KCC';
+
+        const eventName = document.getElementById('eventName');
+        if (eventName) eventName.value = 'Hibiscus';
+
+        const jobSheet = document.getElementById('jobSheet');
+        if (jobSheet) jobSheet.value = 'JS-00254';
+
+        const projectManager = document.getElementById('projectManager');
+        if (projectManager) projectManager.value = 'Hirwa Aubin';
+
+        const vehicleNumber = document.getElementById('vehicleNumber');
+        if (vehicleNumber) vehicleNumber.value = 'RAH 847';
+
+        const driverName = document.getElementById('driverName');
+        if (driverName) driverName.value = 'Valentin';
+
+        const batchLocation = document.getElementById('batchLocation');
+        if (batchLocation) batchLocation.value = 'KCC';
+
+        const batchAction = document.getElementById('batchAction');
+        if (batchAction) batchAction.value = '';
+
+        // Clear authentication related fields
+        const technicianSelect = document.getElementById('technicianSelect');
+        if (technicianSelect) technicianSelect.value = '';
+
+        const technicianPassword = document.getElementById('technicianPassword');
+        if (technicianPassword) technicianPassword.value = '';
+
         const authStatus = document.getElementById('authStatus');
-        if (passwordInput) passwordInput.value = '';
         if (authStatus) authStatus.innerHTML = '';
+
+        const authTechnicianInfo = document.getElementById('authTechnicianInfo');
+        if (authTechnicianInfo) {
+            authTechnicianInfo.innerHTML = '';
+            authTechnicianInfo.classList.add('d-none');
+        }
+
+        // Reset requestedBy field
+        const requestedBy = document.getElementById('requestedBy');
+        if (requestedBy) requestedBy.value = '';
+
+        // Uncheck confirmation checkbox
         const confirmCheckbox = document.getElementById('confirmBatchSubmit');
         if (confirmCheckbox) {
             confirmCheckbox.checked = false;
             confirmCheckbox.disabled = true;
         }
+
+        console.log('✅ Form cleared');
+    }
+
+    // Enhanced handleBatchSubmissionSuccess function
+    function handleBatchSubmissionSuccess() {
+        console.log('✅ Batch submission successful!');
+        showToast('success', 'Batch submitted successfully!');
+
+        // Clear technician from session
+        sessionStorage.removeItem('authenticatedTechnician');
+        console.log('🧹 Cleared technician from sessionStorage');
+
+        // Reset authentication state
+        isTechnicianAuthenticated = false;
+        authenticatedTechnician = null;
+
+        // Clear the batch items array
+        batchItems = [];
+
+        // Update UI to show empty batch
+        updateBatchUI();
+        updateBatchModalData();
+
+        // Clear all form fields
+        clearBatchForm();
+
+        // Hide batch form section and show authentication section
+        const authSection = document.getElementById('authenticationSection');
+        const batchFormSection = document.getElementById('batchFormSection');
+        if (authSection) authSection.classList.remove('d-none');
+        if (batchFormSection) batchFormSection.classList.add('d-none');
+
+        // Reset submit button
+        const submitBtn = document.getElementById('submitBatchBtn');
+        if (submitBtn) {
+            submitBtn.innerHTML = '<i class="fas fa-paper-plane me-1"></i> Submit Batch';
+            submitBtn.disabled = true;
+        }
+
+        // Reset print preview button
+        const printPreviewBtn = document.getElementById('printPreviewBtn');
+        if (printPreviewBtn) printPreviewBtn.disabled = true;
+
+        // Hide modal
+        const modalElement = document.getElementById('batchSubmitModal');
+        if (modalElement) {
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+                modal.hide();
+            }
+        }
+
+        // Clear local storage
+        try {
+            localStorage.removeItem('batch_items');
+            localStorage.removeItem('batch_scan_count');
+            localStorage.removeItem('authenticatedTechnician');
+            console.log('🧹 Cleared local storage');
+        } catch (e) {
+            console.error('Error clearing local storage:', e);
+        }
+
+        // Reset any modal state
+        isSubmitting = false;
+
+        // Show success message in main UI
+        showNotification('success', 'Batch submitted and cleared successfully!');
+
+        // Refresh any lists if needed
+        setTimeout(() => {
+            if (typeof loadRecentItems === 'function') {
+                loadRecentItems();
+            }
+        }, 500);
+    }
+
+    // Also update the resetTechnicianAuthentication function
+    function resetTechnicianAuthentication() {
+        console.log('🔓 Resetting technician authentication UI');
+
+        // Show authentication section
+        showAuthenticationSection();
+
+        // Clear password field
+        const passwordInput = document.getElementById('technicianPassword');
+        if (passwordInput) passwordInput.value = '';
+
+        // Clear auth status
+        const authStatus = document.getElementById('authStatus');
+        if (authStatus) authStatus.innerHTML = '';
+
+        // Clear technician info
+        const authTechnicianInfo = document.getElementById('authTechnicianInfo');
+        if (authTechnicianInfo) {
+            authTechnicianInfo.innerHTML = '';
+            authTechnicianInfo.classList.add('d-none');
+        }
+
+        // Reset technician select
+        const technicianSelect = document.getElementById('technicianSelect');
+        if (technicianSelect) technicianSelect.value = '';
+
+        // Disable confirmation checkbox
+        const confirmCheckbox = document.getElementById('confirmBatchSubmit');
+        if (confirmCheckbox) {
+            confirmCheckbox.checked = false;
+            confirmCheckbox.disabled = true;
+        }
+
+        // Reset requestedBy field
+        const requestedBy = document.getElementById('requestedBy');
+        if (requestedBy) requestedBy.value = '';
+
+        // Disable submit button
         const submitBtn = document.getElementById('submitBatchBtn');
         if (submitBtn) {
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-paper-plane me-1"></i> Submit Batch';
         }
+
+        // Disable print preview button
+        const printPreviewBtn = document.getElementById('printPreviewBtn');
+        if (printPreviewBtn) printPreviewBtn.disabled = true;
+
+        // Hide auth success section
         const authSuccessSection = document.getElementById('authSuccessSection');
         if (authSuccessSection) authSuccessSection.classList.add('d-none');
+
+        // Reset authentication state
+        isTechnicianAuthenticated = false;
+        authenticatedTechnician = null;
+
+        // Clear from session storage
+        sessionStorage.removeItem('authenticatedTechnician');
+
+        console.log('✅ Technician authentication UI reset');
     }
+
+    // Add this to clear batch items array
+    function clearBatchItems() {
+        batchItems = [];
+        updateBatchUI();
+        updateBatchModalData();
+        saveBatchToStorage();
+        showNotification('info', 'Batch items cleared');
+    }
+
 
     function setStockControllerName() {
         const stockControllerName = "<?php echo htmlspecialchars($_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Stock Controller'); ?>";
@@ -2992,19 +3197,75 @@ echo '<!-- DEBUG: User Role: ' . htmlspecialchars($_SESSION['user_role'] ?? 'Not
     function handleBatchSubmissionSuccess() {
         console.log('✅ Batch submission successful!');
         showToast('success', 'Batch submitted successfully!');
+
+        // Clear technician from session
         sessionStorage.removeItem('authenticatedTechnician');
         console.log('🧹 Cleared technician from sessionStorage');
-        const modal = bootstrap.Modal.getInstance(document.getElementById('batchSubmitModal'));
-        if (modal) {
-            modal.hide();
-        }
+
+        // Reset authentication state
+        isTechnicianAuthenticated = false;
+        authenticatedTechnician = null;
+
+        // Clear the batch items array
         batchItems = [];
+
+        // Update UI to show empty batch
         updateBatchUI();
-        saveBatchToStorage();
+        updateBatchModalData();
+
+        // Clear all form fields
+        clearBatchForm();
+
+        // Hide batch form section and show authentication section
+        const authSection = document.getElementById('authenticationSection');
+        const batchFormSection = document.getElementById('batchFormSection');
+        if (authSection) authSection.classList.remove('d-none');
+        if (batchFormSection) batchFormSection.classList.add('d-none');
+
+        // Reset submit button
+        const submitBtn = document.getElementById('submitBatchBtn');
+        if (submitBtn) {
+            submitBtn.innerHTML = '<i class="fas fa-paper-plane me-1"></i> Submit Batch';
+            submitBtn.disabled = true;
+        }
+
+        // Reset print preview button
+        const printPreviewBtn = document.getElementById('printPreviewBtn');
+        if (printPreviewBtn) printPreviewBtn.disabled = true;
+
+        // Hide modal
+        const modalElement = document.getElementById('batchSubmitModal');
+        if (modalElement) {
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+                modal.hide();
+            }
+        }
+
+        // Clear local storage
+        try {
+            localStorage.removeItem('batch_items');
+            localStorage.removeItem('batch_scan_count');
+            localStorage.removeItem('authenticatedTechnician');
+            console.log('🧹 Cleared local storage');
+        } catch (e) {
+            console.error('Error clearing local storage:', e);
+        }
+
+        // Reset any modal state
+        isSubmitting = false;
+
+        // Show success message in main UI
+        showNotification('success', 'Batch submitted and cleared successfully!');
+
+        // Refresh any lists if needed
         setTimeout(() => {
-            resetTechnicianAuthentication();
+            if (typeof loadRecentItems === 'function') {
+                loadRecentItems();
+            }
         }, 500);
     }
+
 
     function handleBatchSubmissionError(errorMessage) {
         showToast('error', errorMessage);
@@ -3013,6 +3274,86 @@ echo '<!-- DEBUG: User Role: ' . htmlspecialchars($_SESSION['user_role'] ?? 'Not
             submitBtn.innerHTML = '<i class="fas fa-paper-plane me-1"></i> Submit Batch';
             submitBtn.disabled = false;
         }
+    }
+
+    function clearBatchForm() {
+        console.log('🧹 Clearing batch form fields...');
+
+        // Clear all input fields
+        const fieldsToClear = [
+            'stockLocation', 'eventName', 'jobSheet', 'projectManager',
+            'vehicleNumber', 'driverName', 'batchAction', 'batchLocation',
+            'batchNotes', 'approvalNotes'
+        ];
+
+        fieldsToClear.forEach(fieldId => {
+            const element = document.getElementById(fieldId);
+            if (element) {
+                if (element.tagName === 'SELECT') {
+                    // Set select to first option or default
+                    if (fieldId === 'stockLocation') element.value = 'KCC';
+                    else if (fieldId === 'batchAction') element.value = '';
+                    else element.selectedIndex = 0;
+                } else {
+                    // Clear text inputs and textareas
+                    element.value = '';
+                }
+            }
+        });
+
+        // Reset specific fields to defaults
+        const stockLocation = document.getElementById('stockLocation');
+        if (stockLocation) stockLocation.value = 'KCC';
+
+        const eventName = document.getElementById('eventName');
+        if (eventName) eventName.value = 'Hibiscus';
+
+        const jobSheet = document.getElementById('jobSheet');
+        if (jobSheet) jobSheet.value = 'JS-00254';
+
+        const projectManager = document.getElementById('projectManager');
+        if (projectManager) projectManager.value = 'Hirwa Aubin';
+
+        const vehicleNumber = document.getElementById('vehicleNumber');
+        if (vehicleNumber) vehicleNumber.value = 'RAH 847';
+
+        const driverName = document.getElementById('driverName');
+        if (driverName) driverName.value = 'Valentin';
+
+        const batchLocation = document.getElementById('batchLocation');
+        if (batchLocation) batchLocation.value = 'KCC';
+
+        const batchAction = document.getElementById('batchAction');
+        if (batchAction) batchAction.value = '';
+
+        // Clear authentication related fields
+        const technicianSelect = document.getElementById('technicianSelect');
+        if (technicianSelect) technicianSelect.value = '';
+
+        const technicianPassword = document.getElementById('technicianPassword');
+        if (technicianPassword) technicianPassword.value = '';
+
+        const authStatus = document.getElementById('authStatus');
+        if (authStatus) authStatus.innerHTML = '';
+
+        const authTechnicianInfo = document.getElementById('authTechnicianInfo');
+        if (authTechnicianInfo) {
+            authTechnicianInfo.innerHTML = '';
+            authTechnicianInfo.classList.add('d-none');
+        }
+
+        // Reset requestedBy field
+        const requestedBy = document.getElementById('requestedBy');
+        if (requestedBy) requestedBy.value = '';
+
+        // Uncheck confirmation checkbox
+        const confirmCheckbox = document.getElementById('confirmBatchSubmit');
+        if (confirmCheckbox) {
+            confirmCheckbox.checked = false;
+            confirmCheckbox.disabled = true;
+        }
+
+        console.log('✅ Form cleared');
     }
 
     // ==================== UTILITY FUNCTIONS ====================
@@ -3195,16 +3536,29 @@ echo '<!-- DEBUG: User Role: ' . htmlspecialchars($_SESSION['user_role'] ?? 'Not
                     initializeTechnicianAuthentication();
                 }
             });
+            // Update this section in your setupModalEvents function
             batchSubmitModal.addEventListener('hidden.bs.modal', function(event) {
-                console.log('Modal hidden, checking submission state...');
-                if (!isSubmitting && !sessionStorage.getItem('authenticatedTechnician')) {
-                    console.log('Not submitting, resetting authentication...');
-                    resetTechnicianAuthentication();
-                } else if (isSubmitting) {
-                    console.log('Submission completed, cleaning up...');
-                    isSubmitting = false;
-                    sessionStorage.removeItem('authenticatedTechnician');
-                }
+                console.log('Modal hidden, resetting form...');
+
+                // Reset authentication state
+                isTechnicianAuthenticated = false;
+                authenticatedTechnician = null;
+                isSubmitting = false;
+
+                // Clear session storage
+                sessionStorage.removeItem('authenticatedTechnician');
+
+                // Reset the UI
+                resetTechnicianAuthentication();
+                clearBatchForm();
+
+                // Show authentication section
+                const authSection = document.getElementById('authenticationSection');
+                const batchFormSection = document.getElementById('batchFormSection');
+                if (authSection) authSection.classList.remove('d-none');
+                if (batchFormSection) batchFormSection.classList.add('d-none');
+
+                console.log('✅ Modal hidden - form reset complete');
             });
         }
         const submitBatchBtn = document.getElementById('submitBatchBtn');

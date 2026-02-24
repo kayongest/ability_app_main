@@ -23,6 +23,7 @@ if (!defined('BASE_URL')) {
 }
 
 // Check if user is logged in - FIXED VERSION
+// Check if user is logged in - FIXED VERSION
 function isLoggedIn()
 {
     // Session should already be started in bootstrap.php
@@ -31,24 +32,481 @@ function isLoggedIn()
         error_log("isLoggedIn(): TRUE - user_id found: " . $_SESSION['user_id']);
         return true;
     }
-    
+
     if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true) {
         error_log("isLoggedIn(): TRUE - logged_in is true");
         return true;
     }
-    
+
     if (isset($_SESSION['username']) && !empty($_SESSION['username'])) {
         error_log("isLoggedIn(): TRUE - username found: " . $_SESSION['username']);
         return true;
     }
-    
+
     if (isset($_SESSION['user_role']) && !empty($_SESSION['user_role'])) {
         error_log("isLoggedIn(): TRUE - user_role found: " . $_SESSION['user_role']);
         return true;
     }
-    
+
     error_log("isLoggedIn(): FALSE - no session variables found");
     error_log("Available session variables: " . print_r($_SESSION, true));
+    return false;
+}
+
+/**
+ * Check if the current user has a specific role
+ * @param string $role The role to check (e.g., 'admin', 'technician', 'user')
+ * @return bool True if user has the role, false otherwise
+ */
+function hasRole($role)
+{
+    // First check if user is logged in
+    if (!isLoggedIn()) {
+        return false;
+    }
+
+    // Check for user role in session - try different possible session variable names
+    $userRole = null;
+
+    if (isset($_SESSION['user_role'])) {
+        $userRole = $_SESSION['user_role'];
+    } elseif (isset($_SESSION['role'])) {
+        $userRole = $_SESSION['role'];
+    } elseif (isset($_SESSION['user']['role'])) {
+        $userRole = $_SESSION['user']['role'];
+    }
+
+    // If no role found, return false
+    if (empty($userRole)) {
+        error_log("hasRole(): No role found in session");
+        return false;
+    }
+
+    // Handle if role is stored as an array (multiple roles)
+    if (is_array($userRole)) {
+        return in_array(strtolower($role), array_map('strtolower', $userRole));
+    }
+
+    // Simple string comparison (case-insensitive)
+    return strtolower($userRole) === strtolower($role);
+}
+
+/**
+ * Check if current user is an admin
+ * @return bool True if user is admin
+ */
+function isAdmin()
+{
+    return hasRole('admin');
+}
+
+/**
+ * Check if user has any of the given roles
+ * @param array $roles Array of roles to check
+ * @return bool True if user has any of the roles
+ */
+function hasAnyRole($roles)
+{
+    if (!isLoggedIn()) {
+        return false;
+    }
+
+    foreach ($roles as $role) {
+        if (hasRole($role)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Check if user has all of the given roles
+ * @param array $roles Array of roles to check
+ * @return bool True if user has all roles
+ */
+function hasAllRoles($roles)
+{
+    if (!isLoggedIn()) {
+        return false;
+    }
+
+    foreach ($roles as $role) {
+        if (!hasRole($role)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Redirect if user doesn't have permission
+ * @param array|string $requiredRoles Role or array of roles required
+ * @param string $redirectTo Page to redirect to if not authorized
+ */
+function requireRole($requiredRoles, $redirectTo = 'dashboard_sections.php')
+{
+    if (!isLoggedIn()) {
+        header('Location: login.php');
+        exit();
+    }
+
+    $roles = is_array($requiredRoles) ? $requiredRoles : [$requiredRoles];
+
+    if (!hasAnyRole($roles)) {
+        $_SESSION['toast_message'] = 'You do not have permission to access this page';
+        $_SESSION['toast_type'] = 'error';
+        header('Location: ' . $redirectTo);
+        exit();
+    }
+}
+
+/**
+ * Get role display name
+ * @param string $role Role key
+ * @return string Role display name
+ */
+function getRoleDisplayName($role)
+{
+    $roleNames = [
+        'admin' => 'Administrator',
+        'manager' => 'Manager',
+        'user' => 'User',
+        'stock_manager' => 'Stock Manager',
+        'stock_controller' => 'Stock Controller',
+        'tech_lead' => 'Tech Lead',
+        'technician' => 'Technician',
+        'driver' => 'Driver'
+    ];
+
+    return $roleNames[$role] ?? ucfirst($role);
+}
+
+
+/**
+ * Check if current user is a technician
+ * @return bool True if user is technician
+ */
+function isTechnician()
+{
+    return hasRole('technician');
+}
+
+/**
+ * Get current user's role
+ * @return string|null The user's role or null if not set
+ */
+/**
+ * Get current user's role
+ * @return string|null The user's role or null if not set
+ */
+function getUserRole()
+{
+    if (!isLoggedIn()) {
+        return null; // Return null, not a boolean
+    }
+
+    if (isset($_SESSION['user_role'])) {
+        return $_SESSION['user_role'];
+    } elseif (isset($_SESSION['role'])) {
+        return $_SESSION['role'];
+    } elseif (isset($_SESSION['user']['role'])) {
+        return $_SESSION['user']['role'];
+    }
+
+    return null;
+}
+
+
+/**
+ * Get all roles for the current user
+ * @return array Array of role names
+ */
+function getUserRoles()
+{
+    if (!isLoggedIn()) {
+        return [];
+    }
+
+    $user_id = $_SESSION['user_id'];
+    $roles = [];
+
+    // Get database connection
+    static $connection = null;
+    if (isset($GLOBALS['conn']) && $GLOBALS['conn']) {
+        $connection = $GLOBALS['conn'];
+    } elseif (!$connection) {
+        if (file_exists(__DIR__ . '/db_connect.php')) {
+            require_once __DIR__ . '/db_connect.php';
+            if (function_exists('getConnection')) {
+                $connection = getConnection();
+            }
+        }
+    }
+
+    if (!$connection) {
+        return [];
+    }
+
+    // Get primary role from users table
+    $stmt = $connection->prepare("SELECT role FROM users WHERE id = ?");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($row = $result->fetch_assoc()) {
+        if ($row['role']) {
+            $roles[] = $row['role'];
+        }
+    }
+    $stmt->close();
+
+    // Get additional roles from user_roles table
+    $stmt = $connection->prepare("SELECT role FROM user_roles WHERE user_id = ?");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    while ($row = $result->fetch_assoc()) {
+        if (!in_array($row['role'], $roles)) {
+            $roles[] = $row['role'];
+        }
+    }
+    $stmt->close();
+
+    return $roles;
+}
+
+/**
+ * Get number of accessible pages for current user
+ * @return array ['total' => total pages, 'accessible' => accessible count, 'percentage' => percentage]
+ */
+/**
+ * Get number of accessible pages for current user
+ * @return array ['total' => total pages, 'accessible' => accessible count, 'percentage' => percentage]
+ */
+function getUserAccessStats()
+{
+    $total_pages = 14;
+    $accessible_pages = 5; // Base modules: Dashboard, Events, Equipment, Single Scan, Profile
+
+    // Get user's roles (using the new function we created)
+    $user_roles = getUserRoles();
+
+    // If user is admin, they have all pages
+    if (in_array('admin', $user_roles)) {
+        return [
+            'total' => $total_pages,
+            'accessible' => $total_pages,
+            'percentage' => 100
+        ];
+    }
+
+    // Bulk Scan - Everyone has this (already counted in base)
+    // No need to add here since it's in base modules
+
+    // Scan History - Admin, Manager, Stock Manager, Stock Controller, Tech Lead
+    if (hasAnyRole(['manager', 'stock_manager', 'stock_controller', 'tech_lead'])) {
+        $accessible_pages++; // Scan History
+    }
+
+    // Import - Admin, Manager, Stock Manager
+    if (hasAnyRole(['manager', 'stock_manager'])) {
+        $accessible_pages++; // Import
+    }
+
+    // Reports - Admin, Manager, Stock Controller
+    if (hasAnyRole(['manager', 'stock_controller'])) {
+        $accessible_pages++; // Reports
+    }
+
+    // Technicians - Admin, Manager, Tech Lead
+    if (hasAnyRole(['manager', 'tech_lead'])) {
+        $accessible_pages++; // Technicians
+    }
+
+    // Stock Locations - Admin, Manager, Stock Manager
+    if (hasAnyRole(['manager', 'stock_manager'])) {
+        $accessible_pages++; // Stock Locations
+    }
+
+    // Batch History - Admin, Manager, Stock Controller
+    if (hasAnyRole(['manager', 'stock_controller'])) {
+        $accessible_pages++; // Batch History
+    }
+
+    // User Management - Admin only (handled by admin check above)
+    // Settings - Admin only (handled by admin check above)
+
+    return [
+        'total' => $total_pages,
+        'accessible' => $accessible_pages,
+        'percentage' => round(($accessible_pages / $total_pages) * 100)
+    ];
+}
+
+
+/**
+ * Get role icon and message
+ * @return array ['icon' => fontawesome class, 'message' => display message]
+ */
+function getRoleDisplayInfo()
+{
+    if (isAdmin()) {
+        return ['icon' => 'fa-crown', 'message' => 'Full Access Granted'];
+    } elseif (hasRole('manager')) {
+        return ['icon' => 'fa-chart-pie', 'message' => 'Manager Access Granted'];
+    } elseif (hasRole('stock_manager')) {
+        return ['icon' => 'fa-boxes-packing', 'message' => 'Stock Manager Access Granted'];
+    } elseif (hasRole('stock_controller')) {
+        return ['icon' => 'fa-chart-gantt', 'message' => 'Stock Controller Access Granted'];
+    } elseif (hasRole('tech_lead')) {
+        return ['icon' => 'fa-laptop-code', 'message' => 'Tech-Lead Access Granted'];
+    } elseif (hasRole('technician')) {
+        return ['icon' => 'fa-screwdriver-wrench', 'message' => 'Tech Access Granted'];
+    } elseif (hasRole('user')) {
+        return ['icon' => 'fa-user-check', 'message' => 'Basic Access Granted'];
+    } elseif (hasRole('driver')) {
+        return ['icon' => 'fa-van-shuttle', 'message' => 'Driver Access Granted'];
+    } else {
+        return ['icon' => 'fa-lock-open', 'message' => 'Access Granted'];
+    }
+}
+
+
+/**
+ * Check if current user has a specific permission
+ * @param string $permission_name The permission name (e.g., 'view_dashboard')
+ * @return bool True if user has permission
+ */
+/**
+ * Check if current user has a specific permission
+ * @param string $permission_name The permission name (e.g., 'view_equipment')
+ * @return bool True if user has permission
+ */
+/**
+ * Check if current user has a specific permission
+ * @param string $permission_name The permission name (e.g., 'view_dashboard')
+ * @return bool True if user has permission
+ */
+/**
+ * Check if current user has a specific permission
+ * @param string $permission_name The permission name (e.g., 'view_dashboard')
+ * @return bool True if user has permission
+ */
+/**
+ * Check if current user has a specific permission
+ * @param string $permission_name The permission name (e.g., 'view_dashboard')
+ * @return bool True if user has permission
+ */
+/**
+ * Check if current user has a specific permission
+ * @param string $permission_name The permission name (e.g., 'view_dashboard')
+ * @return bool True if user has permission
+ */
+/**
+ * Check if current user has a specific permission
+ * @param string $permission_name The permission name (e.g., 'view_dashboard')
+ * @return bool True if user has permission
+ */
+function hasPermission($permission_name)
+{
+    if (!isLoggedIn()) {
+        return false;
+    }
+
+    $user_id = $_SESSION['user_id'];
+
+    // Get database connection
+    static $connection = null;
+    if (isset($GLOBALS['conn']) && $GLOBALS['conn']) {
+        $connection = $GLOBALS['conn'];
+    } elseif (!$connection) {
+        if (file_exists(__DIR__ . '/db_connect.php')) {
+            require_once __DIR__ . '/db_connect.php';
+            if (function_exists('getConnection')) {
+                $connection = getConnection();
+            }
+        }
+    }
+
+    if (!$connection) {
+        error_log("hasPermission: No database connection available");
+        return false;
+    }
+
+    // Get user's roles (from both users.role and user_roles)
+    $roles = [];
+
+    // Get primary role from users table
+    $stmt = $connection->prepare("SELECT role FROM users WHERE id = ?");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($row = $result->fetch_assoc()) {
+        $primary_role = $row['role'];
+        if ($primary_role) {
+            $roles[] = $primary_role;
+        }
+    }
+    $stmt->close();
+
+    // Get additional roles from user_roles table
+    $stmt = $connection->prepare("SELECT role FROM user_roles WHERE user_id = ?");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    while ($row = $result->fetch_assoc()) {
+        if (!in_array($row['role'], $roles)) {
+            $roles[] = $row['role'];
+        }
+    }
+    $stmt->close();
+
+    // If no roles found, return false
+    if (empty($roles)) {
+        return false;
+    }
+
+    // Admin always has all permissions
+    if (in_array('admin', $roles)) {
+        return true;
+    }
+
+    // Get permission ID from name
+    $stmt = $connection->prepare("SELECT id FROM permissions WHERE name = ?");
+    if (!$stmt) {
+        error_log("hasPermission prepare error: " . $connection->error);
+        return false;
+    }
+
+    $stmt->bind_param("s", $permission_name);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($row = $result->fetch_assoc()) {
+        $permission_id = $row['id'];
+        $stmt->close();
+
+        // Check if ANY of the user's roles have this permission
+        $placeholders = implode(',', array_fill(0, count($roles), '?'));
+        $types = str_repeat('s', count($roles));
+
+        $check_stmt = $connection->prepare("SELECT id FROM role_permissions WHERE role IN ($placeholders) AND permission_id = ? LIMIT 1");
+        if (!$check_stmt) {
+            error_log("hasPermission check prepare error: " . $connection->error);
+            return false;
+        }
+
+        // Build parameters array
+        $params = array_merge($roles, [$permission_id]);
+        $check_stmt->bind_param($types . 'i', ...$params);
+        $check_stmt->execute();
+        $check_result = $check_stmt->get_result();
+        $has_permission = $check_result->num_rows > 0;
+        $check_stmt->close();
+
+        return $has_permission;
+    }
+
+    $stmt->close();
     return false;
 }
 

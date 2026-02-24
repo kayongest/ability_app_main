@@ -15,8 +15,16 @@ try {
     
     $db = getConnection();
     
-    // Get item details
-    $stmt = $db->prepare("SELECT * FROM items WHERE id = ?");
+    // Get item details with brand information
+    $stmt = $db->prepare("
+        SELECT 
+            i.*,
+            b.name as brand_name,
+            b.code as brand_code
+        FROM items i
+        LEFT JOIN brands b ON i.brand = b.id
+        WHERE i.id = ?
+    ");
     $stmt->bind_param("i", $id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -55,6 +63,8 @@ try {
             'status' => $item['status'],
             'condition' => $item['condition'],
             'brand' => $item['brand'],
+            'brand_name' => $item['brand_name'],
+            'brand_code' => $item['brand_code'],
             'model' => $item['model'],
             'brand_model' => $item['brand_model'],
             'stock_location' => $item['stock_location'],

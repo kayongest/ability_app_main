@@ -46,7 +46,7 @@ try {
         // Check if search is a number (could be ID)
         if (is_numeric($search)) {
             // If it's a number, also search in ID
-            $whereConditions[] = "(id = ? OR item_name LIKE ? OR serial_number LIKE ? OR description LIKE ? OR brand LIKE ? OR model LIKE ? OR category LIKE ? OR status LIKE ? OR stock_location LIKE ?)";
+            $whereConditions[] = "(i.id = ? OR i.item_name LIKE ? OR i.serial_number LIKE ? OR i.description LIKE ? OR i.brand LIKE ? OR i.model LIKE ? OR i.category LIKE ? OR i.status LIKE ? OR i.stock_location LIKE ?)";
             $searchTermNumber = (int)$search;
             $searchTermWildcard = "%$search%";
             $params[] = $searchTermNumber;
@@ -61,7 +61,7 @@ try {
             $types .= "issssssss";
         } else {
             // Text search across all fields
-            $whereConditions[] = "(item_name LIKE ? OR serial_number LIKE ? OR description LIKE ? OR brand LIKE ? OR model LIKE ? OR category LIKE ? OR status LIKE ? OR stock_location LIKE ?)";
+            $whereConditions[] = "(i.item_name LIKE ? OR i.serial_number LIKE ? OR i.description LIKE ? OR i.brand LIKE ? OR i.model LIKE ? OR i.category LIKE ? OR i.status LIKE ? OR i.stock_location LIKE ?)";
             $searchTerm = "%$search%";
             $params[] = $searchTerm;
             $params[] = $searchTerm;
@@ -77,28 +77,28 @@ try {
 
     // Category filter
     if (!empty($category)) {
-        $whereConditions[] = "category = ?";
+        $whereConditions[] = "i.category = ?";
         $params[] = $category;
         $types .= "s";
     }
 
     // Status filter
     if (!empty($status)) {
-        $whereConditions[] = "status = ?";
+        $whereConditions[] = "i.status = ?";
         $params[] = $status;
         $types .= "s";
     }
 
     // Location filter
     if (!empty($location)) {
-        $whereConditions[] = "stock_location = ?";
+        $whereConditions[] = "i.stock_location = ?";
         $params[] = $location;
         $types .= "s";
     }
 
     // Condition filter
     if (!empty($condition)) {
-        $whereConditions[] = "`condition` = ?";
+        $whereConditions[] = "i.`condition` = ?";
         $params[] = $condition;
         $types .= "s";
     }
@@ -106,7 +106,7 @@ try {
     $whereClause = empty($whereConditions) ? "" : "WHERE " . implode(" AND ", $whereConditions);
 
     // Get total count
-    $countQuery = "SELECT COUNT(*) as total FROM items $whereClause";
+    $countQuery = "SELECT COUNT(*) as total FROM items i $whereClause";
     $countStmt = $db->prepare($countQuery);
 
     if (!empty($params)) {
@@ -118,19 +118,23 @@ try {
     $totalItems = $countResult->fetch_assoc()['total'];
     $totalPages = $totalItems > 0 ? ceil($totalItems / $limit) : 1;
 
-    // Get items for current page
+    // Get items for current page - WITH JOINS for categories, departments, and brands
     $query = "
     SELECT 
         i.*,
         c.name as category_name,
-        d.name as department_name
+        d.name as department_name,
+        b.name as brand_name,
+        b.code as brand_code
     FROM items i
     LEFT JOIN categories c ON i.category = c.id
     LEFT JOIN departments d ON i.department = d.id
+    LEFT JOIN brands b ON i.brand = b.id
     $whereClause 
     ORDER BY $sort $order 
     LIMIT ? OFFSET ?
-";
+    ";
+
     $stmt = $db->prepare($query);
 
     // Add limit and offset to params
@@ -147,65 +151,46 @@ try {
     $stmt->execute();
     $result = $stmt->get_result();
 
-    // Inside api/items/list.php, modify your query to join with categories and departments tables
+    $items = [];
+    while ($row = $result->fetch_assoc()) {
+        // Keep original values
+        $row['category_id'] = $row['category'];  // Keep the ID
+        $row['department_id'] = $row['department']; // Keep the ID
+        $row['brand_id'] = $row['brand']; // Keep the brand ID
 
-    // Get items for current page - WITH JOINS
-    $query = "
-    SELECT 
-        i.*,
-        c.name as category_name,
-        d.name as department_name
-    FROM items i
-    LEFT JOIN categories c ON i.category = c.id
-    LEFT JOIN departments d ON i.department = d.id
-    $whereClause 
-    ORDER BY $sort $order 
-    LIMIT ? OFFSET ?
-";
-    $stmt = $db->prepare($query);
+        // Use the joined names with fallbacks
+        $row['category_name'] = $row['category_name'] ?: 'Uncategorized';
+        $row['department_name'] = $row['department_name'] ?: 'Not Set';
+        $row['brand_name'] = $row['brand_name'] ?: ($row['brand'] ? 'Brand ' . $row['brand'] : 'N/A');
 
-    // ... rest of your binding and execution code
-
-    // Inside your item fetching loop
-    // Inside your item fetching loop
-$items = [];
-while ($row = $result->fetch_assoc()) {
-    // Keep original values
-    $row['category_id'] = $row['category'];  // Keep the ID
-    $row['department_id'] = $row['department']; // Keep the ID
-    
-    // Use the joined names with fallbacks
-    $row['category_name'] = $row['category_name'] ?: 'Uncategorized';
-    $row['department_name'] = $row['department_name'] ?: 'Not Set';
-    
-    // Clean up "undefined" strings
-    $fieldsToCheck = ['description', 'specifications', 'notes', 'brand', 'model', 'tags'];
-    foreach ($fieldsToCheck as $field) {
-        if (isset($row[$field]) && ($row[$field] === 'undefined' || $row[$field] === 'null')) {
-            $row[$field] = '';
+        // Clean up "undefined" strings
+        $fieldsToCheck = ['description', 'specifications', 'notes', 'model', 'tags'];
+        foreach ($fieldsToCheck as $field) {
+            if (isset($row[$field]) && ($row[$field] === 'undefined' || $row[$field] === 'null')) {
+                $row[$field] = '';
+            }
         }
-    }
-    
-    // Fetch accessories for this item
-    $accStmt = $db->prepare("
-        SELECT a.name 
-        FROM accessories a
-        JOIN item_accessories ia ON a.id = ia.accessory_id
-        WHERE ia.item_id = ?
-    ");
-    $accStmt->bind_param("i", $row['id']);
-    $accStmt->execute();
-    $accResult = $accStmt->get_result();
 
-    $accessories = [];
-    while ($acc = $accResult->fetch_assoc()) {
-        $accessories[] = $acc['name'];
-    }
+        // Fetch accessories for this item
+        $accStmt = $db->prepare("
+            SELECT a.name 
+            FROM accessories a
+            JOIN item_accessories ia ON a.id = ia.accessory_id
+            WHERE ia.item_id = ?
+        ");
+        $accStmt->bind_param("i", $row['id']);
+        $accStmt->execute();
+        $accResult = $accStmt->get_result();
 
-    // Add accessories to the row data
-    $row['accessories'] = $accessories;
-    $items[] = $row;
-}
+        $accessories = [];
+        while ($acc = $accResult->fetch_assoc()) {
+            $accessories[] = $acc['name'];
+        }
+
+        // Add accessories to the row data
+        $row['accessories'] = $accessories;
+        $items[] = $row;
+    }
 
     // Return response
     echo json_encode([

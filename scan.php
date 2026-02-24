@@ -12,6 +12,9 @@ if (!isLoggedIn()) {
 require_once 'includes/db_connect.php';
 require_once 'includes/functions.php';
 
+// Get database connection
+$conn = getConnection();
+
 $pageTitle = "Scan QR Code - aBility";
 $showBreadcrumb = true;
 $breadcrumbItems = [
@@ -33,6 +36,8 @@ if (!file_exists($libraryPath)) {
     echo '</div>';
     require_once 'views/partials/footer.php';
     exit();
+}
+?> exit();
 }
 ?>
 

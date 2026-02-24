@@ -11,16 +11,40 @@ if (!isLoggedIn()) {
 require_once 'includes/functions.php';
 require_once 'includes/db_connect.php';
 
-$pageTitle = "Equipment Management - aBility";
-$showBreadcrumb = true;
-$breadcrumbItems = [
-    'Dashboard' => 'dashboard.php',
-    'Equipment' => 'items.php'
+// Get database connection for permission checks
+$conn = getConnection();
+
+// Define permission requirements for each action
+$action_permissions = [
+    'list' => 'view_equipment',
+    'view' => 'view_equipment',
+    'create' => 'add_equipment',
+    'edit' => 'edit_equipment'
 ];
 
 // Get the action from URL
 $action = $_GET['action'] ?? 'list';
 $id = $_GET['id'] ?? 0;
+
+// Check if user has permission for this action
+$required_permission = $action_permissions[$action] ?? 'view_equipment';
+
+if (!hasPermission($required_permission)) {
+    $_SESSION['toast_message'] = 'You do not have permission to ' . 
+        ($action === 'create' ? 'add equipment' : 
+         ($action === 'edit' ? 'edit equipment' : 
+          ($action === 'view' ? 'view equipment details' : 'access equipment')));
+    $_SESSION['toast_type'] = 'error';
+    header('Location: dashboard_sections.php');
+    exit();
+}
+
+$pageTitle = "Equipment Management - aBility";
+$showBreadcrumb = true;
+$breadcrumbItems = [
+    'Dashboard' => 'dashboard_sections.php',
+    'Equipment' => 'items.php'
+];
 
 // Set page title based on action
 if ($action === 'create') {

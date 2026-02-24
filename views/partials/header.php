@@ -42,10 +42,17 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Authentication check
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    // Don't redirect if we're on login or register pages
-    $allowed_pages = ['login.php', 'register.php', 'forgot_password.php'];
+
+// Authentication check - FIXED
+if (!isset($_SESSION['user_id'])) {
+    // Don't redirect if we're on login or public pages
+    $allowed_pages = [
+        'login.php',
+        'register.php',
+        'forgot_password.php',
+        'reset_password.php',
+        'technicians.php'  // Keep technicians.php allowed
+    ];
     $current_page_name = basename($_SERVER['PHP_SELF']);
 
     if (!in_array($current_page_name, $allowed_pages)) {
@@ -53,6 +60,9 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
         header('Location: ' . BASE_URL . 'login.php');
         exit();
     }
+} else {
+    // If user is logged in, we can set a flag for convenience
+    $_SESSION['logged_in'] = true;
 }
 ?>
 
@@ -82,7 +92,6 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 
     <!-- Your Custom CSS -->
-    <!-- <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/styles.css"> -->
     <style>
         /* assets/css/styles.css */
 
@@ -93,7 +102,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             --primary: #324e8e;
             --secondary: #6c757d;
             --success: #28a745;
-            --danger: ;
+            --danger: #dc3545;
             font-size: 0.875em;
             margin-top: 0;
             --warning: #ffc107;
@@ -515,86 +524,113 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
         /* Toast Notifications */
         .toast-container {
             position: fixed;
-            top: 20px;
-            right: 20px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             z-index: 9999;
+            pointer-events: none;
         }
 
-        .custom-toast {
-            min-width: 320px;
+        .toast-notification {
+            min-width: 300px;
+            max-width: 400px;
+            background: white;
             border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08);
-            border: none;
-            backdrop-filter: blur(10px);
-            background: rgba(255, 255, 255, 0.95);
+            padding: 1rem 1.5rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            animation: slideIn 0.3s ease;
             border-left: 4px solid;
-            font-family: "Titillium Web", sans-serif;
-            font-weight: 500;
-            animation: slideInRight 0.3s ease-out;
+            pointer-events: auto;
+            margin-bottom: 1rem;
         }
 
-        .custom-toast.toast-success {
-            border-left-color: #10b981;
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(255, 255, 255, 0.95));
+        .toast-notification.success {
+            border-left-color: #28a745;
         }
 
-        .custom-toast.toast-error {
-            border-left-color: #ef4444;
-            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(255, 255, 255, 0.95));
+        .toast-notification.error {
+            border-left-color: #dc3545;
         }
 
-        .custom-toast.toast-warning {
-            border-left-color: #f59e0b;
-            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(255, 255, 255, 0.95));
+        .toast-notification.warning {
+            border-left-color: #ffc107;
         }
 
-        .custom-toast.toast-info {
-            border-left-color: #3b82f6;
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(255, 255, 255, 0.95));
+        .toast-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
         }
 
-        .custom-toast .toast-message {
-            font-size: 14px;
-            line-height: 1.5;
-            color: #374151;
+        .toast-notification.success .toast-icon {
+            background: rgba(40, 167, 69, 0.1);
+            color: #28a745;
         }
 
-        .custom-toast .toast-title {
+        .toast-notification.error .toast-icon {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+        }
+
+        .toast-notification.warning .toast-icon {
+            background: rgba(255, 193, 7, 0.1);
+            color: #ffc107;
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
             font-weight: 600;
-            font-size: 16px;
-            margin-bottom: 4px;
-            color: #1f2937;
+            margin-bottom: 0.25rem;
         }
 
-        .custom-toast .toast-close-button {
-            opacity: 0.7;
-            transition: opacity 0.2s;
+        .toast-message {
+            color: #6c757d;
+            font-size: 0.9rem;
         }
 
-        .custom-toast .toast-close-button:hover {
-            opacity: 1;
+        .toast-close {
+            color: #adb5bd;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: color 0.3s ease;
         }
 
-        .custom-toast .toast-progress {
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-            height: 3px;
-            border-radius: 0 0 12px 12px;
+        .toast-close:hover {
+            color: #495057;
         }
 
-        @keyframes slideInRight {
+        @keyframes slideIn {
             from {
-                transform: translateX(100%);
+                transform: translateY(-20px);
                 opacity: 0;
             }
 
             to {
-                transform: translateX(0);
+                transform: translateY(0);
                 opacity: 1;
             }
         }
 
-        .toast-container .toast {
-            margin-bottom: 12px;
+        @keyframes slideOut {
+            from {
+                transform: translateY(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
         }
 
         /* Form Controls */
@@ -705,8 +741,6 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             color: #666;
         }
     </style>
-
-
 </head>
 
 <body>
@@ -727,8 +761,8 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
                 <ul class="navbar-nav me-auto">
                     <!-- Dashboard -->
                     <li class="nav-item">
-                        <a class="nav-link <?php echo ($current_page == 'index.php' || $current_page == 'dashboard.php') ? 'active' : ''; ?>"
-                            href="<?php echo BASE_URL; ?>index.php">
+                        <a class="nav-link <?php echo ($current_page == 'index.php' || $current_page == 'dashboard.php' || $current_page == 'dashboard.php') ? 'active' : ''; ?>"
+                            href="<?php echo BASE_URL; ?>dashboard.php">
                             <i class="fas fa-tachometer-alt me-1"></i> Dashboard
                         </a>
                     </li>
@@ -743,8 +777,8 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 
                     <!-- Equipment -->
                     <li class="nav-item">
-                        <a class="nav-link <?php echo (strpos($current_page, 'items') !== false || $current_page == 'index.php?view=items') ? 'active' : ''; ?>"
-                            href="<?php echo BASE_URL; ?>views/items/index.php">
+                        <a class="nav-link <?php echo (strpos($current_page, 'items') !== false) ? 'active' : ''; ?>"
+                            href="<?php echo BASE_URL; ?>items.php">
                             <i class="fas fa-boxes me-1"></i> Equipment
                         </a>
                     </li>
@@ -813,6 +847,22 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
                         </a>
                     </li>
 
+                    <!-- Technicians -->
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo ($current_page == 'technicians.php') ? 'active' : ''; ?>"
+                            href="<?php echo BASE_URL; ?>technicians.php">
+                            <i class="fas fa-users-cog me-1"></i> Technicians
+                        </a>
+                    </li>
+
+                    <!-- Role Access Matrix -->
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo ($current_page == 'role_access_matrix.php') ? 'active' : ''; ?>"
+                            href="<?php echo BASE_URL; ?>role_access_matrix.php">
+                            <i class="fas fa-key me-1"></i> Role Access Matrix
+                        </a>
+                    </li>
+
                     <!-- User Management (Admin only) -->
                     <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
                         <li class="nav-item">
@@ -851,7 +901,6 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
                                 role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-user-circle me-1"></i>
                                 <span class="d-none d-md-inline me-2"><?php echo htmlspecialchars($_SESSION['username'] ?? 'User'); ?></span>
-                                <!-- <i class="fas fa-chevron-down ms-1" style="font-size: 0.8em;"></i> -->
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userDropdown">
                                 <li>
@@ -882,13 +931,14 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             </div>
         </div>
     </nav>
+
     <!-- Main Content Container -->
     <div class="container-fluid mt-3">
         <!-- Breadcrumb -->
-        <!-- <?php if (isset($showBreadcrumb) && $showBreadcrumb): ?>
+        <?php if (isset($showBreadcrumb) && $showBreadcrumb): ?>
             <nav aria-label="breadcrumb" class="mb-3">
                 <ol class="breadcrumb bg-light p-2 rounded">
-                    <li class="breadcrumb-item"><a href="<?php echo BASE_URL; ?>index.php"><i class="fas fa-home"></i></a></li>
+                    <li class="breadcrumb-item"><a href="<?php echo BASE_URL; ?>dashboard.php"><i class="fas fa-home"></i></a></li>
                     <?php
                     if (isset($breadcrumbItems)) {
                         foreach ($breadcrumbItems as $text => $link) {
@@ -902,7 +952,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
                     ?>
                 </ol>
             </nav>
-        <?php endif; ?> -->
+        <?php endif; ?>
 
         <!-- Content will be inserted here by individual pages -->
         <div id="main-content">
